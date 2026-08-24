@@ -1,0 +1,50 @@
+/* Design tokens from SND Archive Figma, Round 2 (node 986:3383).
+   Intended type: Antenna Serif + Antenna 2 VF.
+   Until those files live in /static/fonts, we fall back to Fraunces + Source Sans 3. */
+
+:root,
+[data-theme='paper'] {
+	--color-bg: #f8f5f2;
+	--color-paper: #fffffe;
+	--color-ink: #232323;
+	--color-muted: #7b7b7b;
+	--color-faint: #909090;
+	--color-accent: #1ba098;
+	--color-chip: #e5e0dc;
+	--color-input: #fbfaf9;
+	--color-award: #d9d9d9;
+	--color-header-wash: #f8f5f2;
+	--border-width: 1.5px;
+	--page-gutter: 34px;
+	--filter-width: 296px;
+	--header-height: 70px;
+	--font-serif: 'Antenna Serif', 'Fraunces', 'Iowan Old Style', Georgia, serif;
+	--font-sans: 'Antenna 2 VF', 'Source Sans 3', 'Helvetica Neue', Helvetica, sans-serif;
+	--shadow-menu: 0 12px 40px rgb(35 35 35 / 0.12);
+}
+
+[data-theme='night'] {
+	--color-bg: #1c1b19;
+	--color-paper: #2a2824;
+	--color-ink: #f4efe8;
+	--color-muted: #b4aea6;
+	--color-faint: #8f897f;
+	--color-accent: #4ecdc4;
+	--color-chip: #3a3732;
+	--color-input: #241f1c;
+	--color-award: #5c5852;
+	--color-header-wash: #1c1b19;
+	--shadow-menu: 0 12px 40px rgb(0 0 0 / 0.4);
+}
+
+@font-face {
+	font-family: 'Antenna Serif';
+	src: local('Antenna Serif'), local('AntennaSerif');
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Antenna 2 VF';
+	src: local('Antenna 2 VF'), local('Antenna2VF');
+	font-display: swap;
+}
