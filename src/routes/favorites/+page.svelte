@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import EntryCard from '$lib/components/EntryCard.svelte';
+	import FilterPanel from '$lib/components/FilterPanel.svelte';
 	import { favoriteIds } from '$lib/favorites.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 
-	const saved = $derived(
-		browser ? data.entries.filter((entry) => favoriteIds().includes(entry.id)) : []
-	);
+	const ids = $derived(browser ? favoriteIds() : []);
+	const saved = $derived(data.entries.filter((entry) => ids.includes(entry.id)));
 </script>
 
 <svelte:head>
@@ -18,7 +18,7 @@
 <main class="page">
 	<div class="rail">
 		<h1>Favorites</h1>
-		<p class="lede">Saved on this browser for now. A real account will come with the backend.</p>
+		<FilterPanel facets={data.facets} query={data.query} />
 	</div>
 
 	<section class="grid" aria-label="Favorite entries">
@@ -27,7 +27,13 @@
 				<EntryCard {entry} />
 			{/each}
 		{:else}
-			<p class="empty">No favorites yet. Use the heart on a card in the archive.</p>
+			<p class="empty">
+				{#if ids.length}
+					No favorites match those filters.
+				{:else}
+					No favorites yet. Use the heart on a card in the archive.
+				{/if}
+			</p>
 		{/if}
 	</section>
 </main>
@@ -47,13 +53,7 @@
 		font-size: clamp(48px, 6vw, 64px);
 		font-weight: 700;
 		line-height: 0.95;
-	}
-
-	.lede {
-		color: var(--color-muted);
-		font-size: 13px;
-		margin-top: 16px;
-		max-width: 264px;
+		margin-bottom: 28px;
 	}
 
 	.grid {
@@ -64,7 +64,9 @@
 	}
 
 	.empty {
+		grid-column: 1 / -1;
 		color: var(--color-muted);
+		max-width: 28em;
 	}
 
 	@media (max-width: 1100px) {
@@ -75,6 +77,11 @@
 
 	@media (max-width: 800px) {
 		.page {
+			grid-template-columns: 1fr;
+			padding-top: 48px;
+		}
+
+		.grid {
 			grid-template-columns: 1fr;
 		}
 	}

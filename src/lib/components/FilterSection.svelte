@@ -39,7 +39,7 @@
 		align-items: center;
 		justify-content: space-between;
 		width: 100%;
-		padding: 0 23px 0 0;
+		padding: 0 18px 0 var(--filter-inset);
 		text-align: left;
 	}
 
@@ -53,17 +53,19 @@
 
 	.caret {
 		display: flex;
+		/* Asset points up; expanded = down, collapsed = right. */
+		transform: rotate(180deg);
 		transition: transform 0.15s ease;
 	}
 
 	.caret.closed {
-		transform: rotate(180deg);
+		transform: rotate(90deg);
 	}
 
 	.body {
 		display: flex;
 		flex-direction: column;
 		gap: 5px;
-		padding: 16px 0 8px;
+		padding: 16px 26px 8px var(--filter-inset);
 	}
 </style>

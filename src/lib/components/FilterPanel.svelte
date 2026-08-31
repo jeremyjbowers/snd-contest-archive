@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { SPECIAL_FILTERS, type EntryQuery, type Facets } from '$lib/catalog/types';
 	import { setOrDelete, toggleListParam, type ListParam } from '$lib/catalog/url';
 	import CheckboxRow from './CheckboxRow.svelte';
 	import FilterSection from './FilterSection.svelte';
+	import YearRange from './YearRange.svelte';
 
 	let { facets, query }: { facets: Facets; query: EntryQuery } = $props();
 
@@ -40,8 +40,9 @@
 		const params = new URLSearchParams(page.url.searchParams);
 		mutate(params);
 		const qs = params.toString();
-		const path = qs ? `${resolve('/')}?${qs}` : resolve('/');
-		// eslint-disable-next-line svelte/no-navigation-without-resolve -- keep filters on the resolved homepage path
+		const pathname = page.url.pathname;
+		const path = qs ? `${pathname}?${qs}` : pathname;
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- stay on the current archive or favorites path
 		void goto(path, { replaceState: true, keepFocus: true, noScroll: true });
 	}
 
@@ -127,31 +128,15 @@
 			{/each}
 		</FilterSection>
 
-		<section class="section years">
-			<div class="years-head">
-				<span class="label">Years</span>
-			</div>
-			<div class="year-scale">
-				<span>{yearMin}</span>
-				<input
-					type="range"
-					min={facets.yearMin}
-					max={facets.yearMax}
-					bind:value={yearMin}
-					onpointerup={commitYears}
-					onchange={commitYears}
-				/>
-				<input
-					type="range"
-					min={facets.yearMin}
-					max={facets.yearMax}
-					bind:value={yearMax}
-					onpointerup={commitYears}
-					onchange={commitYears}
-				/>
-				<span>{yearMax}</span>
-			</div>
-		</section>
+		<FilterSection title="Years">
+			<YearRange
+				min={facets.yearMin}
+				max={facets.yearMax}
+				bind:low={yearMin}
+				bind:high={yearMax}
+				oncommit={commitYears}
+			/>
+		</FilterSection>
 
 		<label class="search-block">
 			<span class="label">Person</span>
@@ -209,7 +194,7 @@
 
 	<button class="minimal" type="button" onclick={() => (extraOpen = !extraOpen)}>
 		{extraOpen ? 'minimal' : 'advanced'}
-		<span class="dash"></span>
+		<span class={extraOpen ? 'dash' : 'plus'} aria-hidden="true"></span>
 	</button>
 </aside>
 
@@ -220,12 +205,11 @@
 		padding-bottom: 48px;
 	}
 
-	.search-block,
-	.years {
+	.search-block {
 		display: block;
 		width: 100%;
 		border-top: var(--border-width) solid var(--color-ink);
-		padding: 18px 0 16px;
+		padding: 18px 26px 16px var(--filter-inset);
 	}
 
 	.label {
@@ -256,27 +240,13 @@
 		margin-bottom: 10px;
 	}
 
-	.year-scale {
-		display: grid;
-		grid-template-columns: auto 1fr auto;
-		align-items: center;
-		gap: 8px;
-		font-weight: 300;
-	}
-
-	.year-scale input[type='range'] {
-		grid-column: 2;
-		width: 100%;
-		accent-color: var(--color-ink);
-	}
-
 	.minimal {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		width: 100%;
 		border-top: var(--border-width) solid var(--color-ink);
-		padding: 18px 0;
+		padding: 18px 18px 18px var(--filter-inset);
 		font-family: var(--font-serif);
 		font-size: 17px;
 		font-weight: 700;
@@ -287,6 +257,34 @@
 
 	.dash {
 		width: 13px;
-		border-top: 2px solid var(--color-faint);
+		border-top: 2px solid currentColor;
+	}
+
+	.plus {
+		position: relative;
+		width: 13px;
+		height: 13px;
+		flex: none;
+	}
+
+	.plus::before,
+	.plus::after {
+		content: '';
+		position: absolute;
+		background: currentColor;
+	}
+
+	.plus::before {
+		top: 5.5px;
+		left: 0;
+		width: 13px;
+		height: 2px;
+	}
+
+	.plus::after {
+		top: 0;
+		left: 5.5px;
+		width: 2px;
+		height: 13px;
 	}
 </style>

@@ -6,6 +6,7 @@
 	import Icon from './Icon.svelte';
 
 	let menuOpen = $state(false);
+	let menuRoot = $state<HTMLDivElement | undefined>(undefined);
 
 	const links = [
 		{ href: '/about', label: 'about snd' },
@@ -16,24 +17,41 @@
 	] as const;
 
 	const favoritesCount = $derived(favoriteIds().length);
+
+	function toggleMenu() {
+		menuOpen = !menuOpen;
+	}
+
+	function closeIfOutside(event: MouseEvent) {
+		if (menuRoot?.contains(event.target as Node)) return;
+		menuOpen = false;
+	}
 </script>
+
+<svelte:window onclick={closeIfOutside} />
 
 <header class="header">
 	<div class="bar">
-		<div class="left">
+		<div class="left" bind:this={menuRoot}>
 			<button
 				class="menu-btn"
+				class:open={menuOpen}
 				type="button"
 				aria-expanded={menuOpen}
-				onclick={() => (menuOpen = !menuOpen)}
+				aria-controls="site-menu"
+				onclick={toggleMenu}
 			>
-				<Icon name="menu" width={13} height={12} />
+				<span class="burger" aria-hidden="true"></span>
 				MENU
 			</button>
 			{#if menuOpen}
-				<nav class="dropdown" aria-label="Site">
+				<nav id="site-menu" class="dropdown" aria-label="Site">
 					{#each links as link (link.href)}
-						<a href={resolve(link.href)} onclick={() => (menuOpen = false)}>{link.label}</a>
+						<a
+							href={resolve(link.href)}
+							aria-current={page.url.pathname === link.href ? 'page' : undefined}
+							onclick={() => (menuOpen = false)}>{link.label}</a
+						>
 					{/each}
 				</nav>
 			{/if}
@@ -94,6 +112,25 @@
 		text-transform: uppercase;
 	}
 
+	.menu-btn {
+		height: 51px;
+		padding: 0 10px 0 8px;
+		margin-left: -8px;
+	}
+
+	.menu-btn.open {
+		background: var(--color-ink);
+		color: var(--color-bg);
+	}
+
+	.burger {
+		width: 13px;
+		height: 12px;
+		flex: none;
+		background: currentColor;
+		mask: url('/assets/icons/menu.svg') center / 13px 12px no-repeat;
+	}
+
 	.logo {
 		display: flex;
 		justify-content: center;
@@ -118,12 +155,11 @@
 
 	.dropdown {
 		position: absolute;
-		top: calc(100% + 8px);
+		top: 100%;
 		left: -8px;
 		width: 314px;
-		background: var(--color-paper);
+		background: var(--color-ink);
 		border: var(--border-width) solid var(--color-ink);
-		box-shadow: var(--shadow-menu);
 		padding: 35px 20px;
 		display: flex;
 		flex-direction: column;
@@ -132,10 +168,17 @@
 	}
 
 	.dropdown a {
-		font-size: 16px;
-		font-weight: 600;
-		letter-spacing: 0.04em;
+		font-family: var(--font-serif);
+		font-size: 17px;
+		font-weight: 700;
+		letter-spacing: 0.05em;
 		text-transform: uppercase;
+		color: var(--color-bg);
+	}
+
+	.dropdown a:hover,
+	.dropdown a[aria-current='page'] {
+		color: var(--color-accent);
 	}
 
 	.theme {
