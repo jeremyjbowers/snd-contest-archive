@@ -73,10 +73,10 @@
 		</nav>
 	</div>
 
-	<button class="theme" type="button" onclick={cycleTheme}>
+	<!-- <button class="theme" type="button" onclick={cycleTheme}>
 		new theme
 		<Icon name="shuffle" width={20} height={14} />
-	</button>
+	</button> -->
 </header>
 
 <style>

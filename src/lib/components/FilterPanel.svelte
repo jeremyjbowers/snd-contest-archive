@@ -200,7 +200,7 @@
 
 <style>
 	.panel {
-		width: var(--filter-width);
+		width: 100%;
 		flex: none;
 		padding-bottom: 48px;
 	}

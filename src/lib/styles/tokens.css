@@ -16,10 +16,10 @@
 	--color-header-wash: #f8f5f2;
 	--border-width: 1.5px;
 	--page-gutter: 34px;
-	--filter-width: 296px;
-	--filter-inset: 23px;
+	--filter-width: 325px;
+	--filter-inset: 10px;
 	--filter-control: 247px;
-	--header-height: 70px;
+	--header-height: 50px;
 	--font-serif: 'Antenna Serif', 'Fraunces', 'Iowan Old Style', Georgia, serif;
 	--font-sans: 'Antenna 2 VF', 'Source Sans 3', 'Helvetica Neue', Helvetica, sans-serif;
 	--shadow-menu: 0 12px 40px rgb(35 35 35 / 0.12);

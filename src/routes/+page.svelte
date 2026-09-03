@@ -34,13 +34,24 @@
 </main>
 
 <style>
+	.rail {
+		border-left: var(--border-width) solid var(--color-ink);
+		border-right: var(--border-width) solid var(--color-ink);
+		padding: 60px var(--filter-inset) 0;
+		min-height: 0;
+		overflow-y: auto;
+	}
 	.page {
 		display: grid;
 		grid-template-columns: var(--filter-width) minmax(0, 1fr);
-		gap: 35px;
-		padding: 86px var(--page-gutter) 80px;
+		grid-template-rows: minmax(0, 1fr);
+		/* gap: 35px; */
+		padding: 12px var(--page-gutter);
 		max-width: 1512px;
 		margin: 0 auto;
+		height: calc(100dvh - var(--header-height) - var(--border-width));
+		overflow: hidden;
+		contain: paint;
 	}
 
 	.kicker {
@@ -76,6 +87,10 @@
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 46px 19px;
 		align-content: start;
+		min-height: 0;
+		overflow-y: auto;
+		padding: 0 24px 50px;
+		border-right: var(--border-width) solid var(--color-ink);
 	}
 
 	.empty {
@@ -93,11 +108,17 @@
 	@media (max-width: 800px) {
 		.page {
 			grid-template-columns: 1fr;
+			grid-template-rows: none;
 			padding-top: 48px;
+			height: auto;
+			overflow: visible;
+			contain: none;
 		}
 
+		.rail,
 		.grid {
 			grid-template-columns: 1fr;
+			overflow: visible;
 		}
 	}
 </style>
