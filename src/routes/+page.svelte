@@ -47,7 +47,7 @@
 		grid-template-rows: minmax(0, 1fr);
 		/* gap: 35px; */
 		padding: 12px var(--page-gutter);
-		max-width: 1512px;
+		max-width: var(--page-max);
 		margin: 0 auto;
 		height: calc(100dvh - var(--header-height) - var(--border-width));
 		overflow: hidden;

@@ -44,7 +44,7 @@
 		grid-template-columns: var(--filter-width) minmax(0, 1fr);
 		gap: 35px;
 		padding: 86px var(--page-gutter) 80px;
-		max-width: 1512px;
+		max-width: var(--page-max);
 		margin: 0 auto;
 	}
 

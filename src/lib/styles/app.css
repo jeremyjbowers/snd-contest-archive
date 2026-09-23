@@ -73,3 +73,30 @@ p {
 .serif {
 	font-family: var(--font-serif);
 }
+
+.list-sans {
+	font-family: var(--font-sans);
+	font-size: 16px;
+	font-weight: 250;
+	font-stretch: 93%;
+}
+.slug-bold {
+	font-family: var(--font-sans);
+	font-size: 16px;
+	font-weight: 800;
+	font-stretch: 65%;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+.all-caps-serif {
+	font-family: var(--font-serif);
+	font-size: 17px;
+	font-weight: 800;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}
+.title-serif {
+	font-family: var(--font-serif);
+	font-size: 16px;
+	font-weight: 800;
+}

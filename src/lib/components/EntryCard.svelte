@@ -28,15 +28,14 @@
 			height="24"
 		/>
 	</button>
-	<div class="meta">
-		<a class="copy" {href}>
-			<p class="publication">{entry.publication}</p>
-			<p class="category">{entry.category}</p>
-		</a>
+	<div class="card-info">
+		<p class="publication title-serif">{entry.publication}</p>
 		<div class="award">
 			<AwardFlag />
-			<p class="year">{entry.year}</p>
 		</div>
+		<p class="category list-sans">{entry.category}</p>
+		<p class="year list-sans">{entry.year}</p>
+
 	</div>
 </article>
 
@@ -78,29 +77,13 @@
 		height: 24px;
 	}
 
-	.meta {
-		display: flex;
-		justify-content: space-between;
-		gap: 12px;
-		align-items: flex-start;
+	.card-info {
+		display: grid;
+		grid-template-columns: 2fr 1fr;
+		grid-template-rows: 2fr 1fr;
 	}
 
-	.copy {
-		min-width: 0;
-	}
-
-	.publication {
-		font-family: var(--font-serif);
-		font-size: 16px;
-		font-weight: 700;
-	}
-
-	.category,
-	.year {
-		font-size: 16px;
-		font-weight: 300;
-		margin-top: 8px;
-	}
+	
 
 	.award {
 		display: flex;

@@ -104,7 +104,7 @@
 		display: grid;
 		grid-template-columns: minmax(280px, 430px) minmax(0, 1fr);
 		min-height: calc(100vh - var(--header-height));
-		max-width: 1512px;
+		max-width: var(--page-max);
 		margin: 0 auto;
 		padding: 0 var(--page-gutter) 80px;
 	}

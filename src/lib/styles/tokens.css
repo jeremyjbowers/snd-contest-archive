@@ -1,7 +1,3 @@
-/* Design tokens from SND Archive Figma, Round 2 (node 986:3383).
-   Intended type: Antenna Serif + Antenna 2 VF.
-   Until those files live in /static/fonts, we fall back to Fraunces + Source Sans 3. */
-
 :root,
 [data-theme='paper'] {
 	--color-bg: #f8f5f2;
@@ -16,12 +12,13 @@
 	--color-header-wash: #f8f5f2;
 	--border-width: 1.5px;
 	--page-gutter: 34px;
+	--page-max: 1512px; /* content measure; header bar matches so nav aligns with the rail/grid borders */
 	--filter-width: 325px;
 	--filter-inset: 10px;
 	--filter-control: 247px;
 	--header-height: 50px;
-	--font-serif: 'Antenna Serif', 'Fraunces', 'Iowan Old Style', Georgia, serif;
-	--font-sans: 'Antenna 2 VF', 'Source Sans 3', 'Helvetica Neue', Helvetica, sans-serif;
+	--font-serif: 'Antenna Serif', 'Iowan Old Style', Georgia, serif;
+	--font-sans: 'Antenna 2 VF', 'Helvetica Neue', Helvetica, sans-serif;
 	--shadow-menu: 0 12px 40px rgb(35 35 35 / 0.12);
 }
 
@@ -41,12 +38,82 @@
 
 @font-face {
 	font-family: 'Antenna Serif';
-	src: local('Antenna Serif'), local('AntennaSerif');
+	src: url('/fonts/AntennaSerif-Light.woff2') format('woff2');
+	font-style: normal;
+	font-weight: 300;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Antenna Serif';
+	src: url('/fonts/AntennaSerif-LightItalic.woff2') format('woff2');
+	font-style: italic;
+	font-weight: 300;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Antenna Serif';
+	src: url('/fonts/AntennaSerif-Regular.woff2') format('woff2');
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Antenna Serif';
+	src: url('/fonts/AntennaSerif-Italic.woff2') format('woff2');
+	font-style: italic;
+	font-weight: 400;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Antenna Serif';
+	src: url('/fonts/AntennaSerif-Medium.woff2') format('woff2');
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Antenna Serif';
+	src: url('/fonts/AntennaSerif-MediumItalic.woff2') format('woff2');
+	font-style: italic;
+	font-weight: 500;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Antenna Serif';
+	src: url('/fonts/AntennaSerif-Bold.woff2') format('woff2');
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Antenna Serif';
+	src: url('/fonts/AntennaSerif-BoldItalic.woff2') format('woff2');
+	font-style: italic;
+	font-weight: 700;
 	font-display: swap;
 }
 
 @font-face {
 	font-family: 'Antenna 2 VF';
-	src: local('Antenna 2 VF'), local('Antenna2VF');
+	src: url('/fonts/Antenna2VF-VariableRegular.woff2') format('woff2');
+	font-style: normal;
+	font-weight: 100 900;
+	font-stretch: 50% 100%;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Antenna 2 VF';
+	src: url('/fonts/Antenna2VF-VariableItalic.woff2') format('woff2');
+	font-style: italic;
+	font-weight: 100 900;
+	font-stretch: 50% 100%;
 	font-display: swap;
 }

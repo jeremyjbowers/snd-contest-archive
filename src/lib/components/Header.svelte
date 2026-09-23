@@ -30,7 +30,7 @@
 
 <svelte:window onclick={closeIfOutside} />
 
-<header class="header">
+<header class="header slug-bold">
 	<div class="bar">
 		<div class="left" bind:this={menuRoot}>
 			<button
@@ -93,6 +93,8 @@
 		grid-template-columns: 1fr auto 1fr;
 		align-items: center;
 		height: var(--header-height);
+		max-width: var(--page-max);
+		margin: 0 auto;
 		padding: 0 var(--page-gutter);
 	}
 
@@ -106,10 +108,6 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 5px;
-		font-size: 16px;
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
 	}
 
 	.menu-btn {

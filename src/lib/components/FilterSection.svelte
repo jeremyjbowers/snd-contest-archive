@@ -15,7 +15,7 @@
 
 <section class="section" class:open>
 	<button class="head" type="button" aria-expanded={open} onclick={() => (open = !open)}>
-		<span class="title">{title}</span>
+		<span class="title all-caps-serif">{title}</span>
 		<span class="caret" class:closed={!open}>
 			<Icon name="caret" width={24} />
 		</span>
@@ -42,15 +42,6 @@
 		padding: 0 18px 0 var(--filter-inset);
 		text-align: left;
 	}
-
-	.title {
-		font-family: var(--font-serif);
-		font-size: 17px;
-		font-weight: 700;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-	}
-
 	.caret {
 		display: flex;
 		/* Asset points up; expanded = down, collapsed = right. */
