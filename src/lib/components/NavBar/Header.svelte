@@ -40,7 +40,7 @@
 				aria-controls="site-menu"
 				onclick={toggleMenu}
 			>
-				<Burger size={18} />
+				<span class="mark"><Burger size={18} /></span>
 				MENU
 			</button>
 			{#if menuOpen}
@@ -66,7 +66,7 @@
 				href={resolve('/favorites')}
 				class:active={page.url.pathname === '/favorites'}
 			>
-				Favorites{favoritesCount ? ` (${favoritesCount})` : ''}
+				Favorites
 			</a>
 			<a class="nav-link" href={resolve('/account')}>account</a>
 		</nav>
@@ -83,36 +83,35 @@
 		position: sticky;
 		top: 0;
 		z-index: 20;
-		background: var(--color-header-wash);
+		background: var(--color-bg);
 		border-bottom: var(--border-width) solid var(--color-ink);
 	}
 
 	.bar {
-		display: grid;
-		grid-template-columns: 1fr auto 1fr;
-		align-items: center;
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
 		height: var(--header-height);
 		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: 0 var(--page-gutter);
+		padding: 0 var(--page-gutter) 6px;
 	}
 
-	.left {
-		position: relative;
-		justify-self: start;
+	.left,
+	.right {
+		height: min-content;
+		display: flex;
+		gap: 13px;
 	}
-
-	.menu-btn,
-	.nav-link {
+	.menu-btn {
 		display: inline-flex;
 		align-items: center;
 		gap: 5px;
 	}
 
-	.menu-btn {
-		height: 51px;
-		padding: 0 10px 0 8px;
-		margin-left: -8px;
+	.mark {
+		display: flex;
+		transform: translateY(-1px); /* cap line of MENU */
 	}
 
 	.menu-btn.open {
@@ -127,16 +126,9 @@
 	}
 
 	.logo img {
-		width: 86px;
-		height: 31px;
+		width: auto;
+		height: 28px;
 		object-fit: contain;
-		object-position: bottom;
-	}
-
-	.right {
-		justify-self: end;
-		display: flex;
-		gap: 13px;
 	}
 
 	.nav-link.active {

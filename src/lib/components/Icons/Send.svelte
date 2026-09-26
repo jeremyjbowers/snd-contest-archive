@@ -2,9 +2,9 @@
 	let { size = 24, color = 'currentColor' }: { size?: number; color?: string } = $props();
 </script>
 
-<!-- Tabler: chevron-up. Points up; rotate the parent to aim it. -->
+<!-- Tabler: send -->
 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" style:width={size} style:height={size} style:color>
-	<path d="m6 15l6-6l6 6" />
+	<path d="M10 14L21 3m0 0l-6.5 18a.55.55 0 0 1-1 0L10 14l-7-3.5a.55.55 0 0 1 0-1z" />
 </svg>
 
 <style>

@@ -11,7 +11,13 @@
 </script>
 
 <label class="row list-sans">
-	<input type="checkbox" {checked} onchange={(event) => onchange?.(event.currentTarget.checked)} />
+	<span class="box">
+		<input type="checkbox" {checked} onchange={(event) => onchange?.(event.currentTarget.checked)} />
+		<!-- Material Symbols: check, traced as a centerline so the stroke matches the border -->
+		<svg class="tick" viewBox="0 0 24 24" aria-hidden="true">
+			<polyline points="4.56 11.59 9.55 16.58 19.44 6.69" />
+		</svg>
+	</span>
 	<span>{label}</span>
 </label>
 
@@ -27,13 +33,17 @@
 		cursor: pointer;
 	}
 
-	.row input {
-		appearance: none;
-		display: grid;
-		place-content: center;
+	.box {
+		position: relative;
 		flex: none;
 		width: var(--box-size);
 		height: var(--box-size);
+	}
+
+	.box input {
+		appearance: none;
+		position: absolute;
+		inset: 0;
 		margin: 0;
 		border: var(--box-stroke) solid var(--color-ink);
 		border-radius: var(--box-radius);
@@ -41,17 +51,25 @@
 		cursor: pointer;
 	}
 
-	.row input:checked {
+	.box input:checked {
 		background: var(--color-accent);
 	}
 
-	/* checkmark: the left and bottom sides of a box, rotated to a tick */
-	.row input:checked::before {
-		content: '';
-		width: 9px;
-		height: 5.9px;
-		border-left: var(--box-stroke) solid var(--color-ink);
-		border-bottom: var(--box-stroke) solid var(--color-ink);
-		transform: rotate(-45deg);
+	.tick {
+		position: absolute;
+		inset: var(--box-stroke);
+		display: none;
+		pointer-events: none;
+	}
+
+	.box input:checked + .tick {
+		display: block;
+	}
+
+	.tick polyline {
+		fill: none;
+		stroke: var(--color-ink);
+		stroke-width: var(--box-stroke);
+		vector-effect: non-scaling-stroke; /* keeps the stroke in real pixels */
 	}
 </style>

@@ -1,6 +1,10 @@
 <script lang="ts">
 	import AwardFlag from '$lib/components/Grid/AwardFlag.svelte';
+	import Facebook from '$lib/components/Icons/Facebook.svelte';
 	import Heart from '$lib/components/Icons/Heart.svelte';
+	import Instagram from '$lib/components/Icons/Instagram.svelte';
+	import LinkedIn from '$lib/components/Icons/LinkedIn.svelte';
+	import Send from '$lib/components/Icons/Send.svelte';
 	import { isFavorite, toggleFavorite } from '$lib/favorites.svelte';
 	import type { PageProps } from './$types';
 
@@ -29,14 +33,14 @@
 
 <article class="page">
 	<aside class="meta">
-		<p class="year">{entry.year}</p>
-		<AwardFlag award={entry.award} />
+		<p class="year slug">{entry.year}</p>
+		<AwardFlag award={entry.award} facing="right" />
 		<h1>{entry.publication}</h1>
 		<p class="work-title">{entry.title}</p>
 
 		<dl>
 			<div>
-				<dt>Category</dt>
+				<dt class='slug'>Category</dt>
 				<dd>
 					{entry.category}{#if entry.subcategory}
 						> {entry.subcategory}{/if}
@@ -44,19 +48,19 @@
 			</div>
 			{#if creditLine}
 				<div>
-					<dt>Credits</dt>
+					<dt class='slug'>Credits</dt>
 					<dd>{creditLine}</dd>
 				</div>
 			{/if}
 			{#if entry.description}
 				<div>
-					<dt>Description</dt>
+					<dt class='slug'>Description</dt>
 					<dd>{entry.description}</dd>
 				</div>
 			{/if}
 			{#if entry.url}
 				<div>
-					<dt>Link</dt>
+					<dt class='slug'>Link</dt>
 					<dd>
 						<a href={entry.url} rel="external noreferrer">{entry.url.replace(/^https?:\/\//, '')}</a
 						>
@@ -64,7 +68,7 @@
 				</div>
 			{/if}
 			<div>
-				<dt>platform</dt>
+				<dt class='slug'>platform</dt>
 				<dd>{entry.platform}</dd>
 			</div>
 		</dl>
@@ -79,16 +83,16 @@
 				<Heart size={24} filled={favorited} />
 			</button>
 			<button type="button" aria-label="Share" onclick={share}>
-				<img src="/assets/icons/share.svg" alt="" width="24" height="24" />
+				<Send />
 			</button>
 			<a href="https://www.instagram.com" rel="noreferrer" aria-label="Instagram">
-				<img src="/assets/icons/instagram.svg" alt="" width="24" height="24" />
+				<Instagram />
 			</a>
 			<a href="https://www.linkedin.com" rel="noreferrer" aria-label="LinkedIn">
-				<img src="/assets/icons/linkedin.svg" alt="" width="24" height="24" />
+				<LinkedIn />
 			</a>
 			<a href="https://www.facebook.com" rel="noreferrer" aria-label="Facebook">
-				<img src="/assets/icons/facebook.svg" alt="" width="24" height="24" />
+				<Facebook />
 			</a>
 		</div>
 	</aside>
@@ -104,22 +108,23 @@
 	.page {
 		display: grid;
 		grid-template-columns: minmax(280px, 430px) minmax(0, 1fr);
-		min-height: calc(100vh - var(--header-height));
+		grid-template-rows: minmax(0, 1fr);
+		height: calc(100dvh - var(--header-height) - var(--border-width));
 		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: 0 var(--page-gutter) 80px;
+		padding: 0 var(--page-gutter);
+		overflow: hidden;
+		contain: paint;
 	}
 
 	.meta {
 		border-right: var(--border-width) solid var(--color-ink);
 		padding: 48px 50px 48px 16px;
+		min-height: 0;
+		overflow-y: auto;
 	}
 
 	.year {
-		font-size: 14px;
-		font-weight: 600;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
 		margin-bottom: 8px;
 	}
 
@@ -145,11 +150,9 @@
 	}
 
 	dt {
-		font-size: 14px;
-		font-weight: 600;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		margin-bottom: 10px;
+		margin-bottom: 3px;
+		color: var(--color-muted);
+		font-size: 13px;
 	}
 
 	dd {
@@ -162,20 +165,30 @@
 
 	.share {
 		display: flex;
+		align-items: center;
 		gap: 4px;
 		margin-top: 48px;
 	}
 
-	.share img {
-		width: 24px;
-		height: 24px;
+	.share button:hover {
+		color: var(--color-accent);
 	}
 
 	.gallery {
-		padding: 48px 0 0 70px;
+		padding: var(--page-gutter) 0 var(--page-gutter) var(--page-gutter);
 		display: flex;
 		flex-direction: column;
+		justify-content: safe center;
 		gap: 24px;
+		min-height: 0;
+		overflow-y: auto;
+		scrollbar-width: none;
+	}
+
+	.gallery::-webkit-scrollbar {
+		display: none;
+		width: 0;
+		height: 0;
 	}
 
 	.gallery img {
@@ -188,15 +201,22 @@
 	@media (max-width: 900px) {
 		.page {
 			grid-template-columns: 1fr;
+			grid-template-rows: none;
+			height: auto;
+			overflow: visible;
+			contain: none;
+			padding-bottom: 80px;
 		}
 
 		.meta {
 			border-right: 0;
 			padding: 32px 0;
+			overflow: visible;
 		}
 
 		.gallery {
 			padding: 0;
+			overflow: visible;
 		}
 	}
 </style>

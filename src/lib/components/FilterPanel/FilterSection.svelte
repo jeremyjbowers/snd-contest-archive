@@ -5,11 +5,13 @@
 	let {
 		title,
 		open = $bindable(true),
+		before,
 		children
 	}: {
 		title: string;
 		open?: boolean;
-		children: Snippet;
+		before?: Snippet;
+		children?: Snippet;
 	} = $props();
 </script>
 
@@ -22,7 +24,12 @@
 	</button>
 	{#if open}
 		<div class="body">
-			{@render children()}
+			{#if before}
+				{@render before()}
+			{/if}
+			{#if children}
+				{@render children()}
+			{/if}
 		</div>
 	{/if}
 </section>
@@ -56,7 +63,6 @@
 	.body {
 		display: flex;
 		flex-direction: column;
-		gap: 5px;
 		padding: 16px 26px 8px var(--filter-inset);
 	}
 </style>

@@ -3,8 +3,9 @@
 	import { page } from '$app/state';
 	import { SPECIAL_FILTERS, type EntryQuery, type Facets } from '$lib/catalog/types';
 	import { setOrDelete, toggleListParam, type ListParam } from '$lib/catalog/url';
-	import CheckboxRow from './CheckboxRow.svelte';
+	import PlusMinus from '../Icons/PlusMinus.svelte';
 	import FilterSection from './FilterSection.svelte';
+	import OptionList from './OptionList.svelte';
 	import YearRange from './YearRange.svelte';
 
 	let { facets, query }: { facets: Facets; query: EntryQuery } = $props();
@@ -82,50 +83,44 @@
 	</label>
 
 	<FilterSection title="design discipline">
-		{#each facets.disciplines as discipline (discipline)}
-			<CheckboxRow
-				label={discipline}
-				checked={query.disciplines.includes(discipline)}
-				onchange={() => toggle('discipline', discipline)}
-			/>
-		{/each}
+		<OptionList
+			items={facets.disciplines}
+			selected={query.disciplines}
+			onselect={(value) => toggle('discipline', value)}
+		/>
 	</FilterSection>
 
 	<FilterSection title="Award">
-		{#each facets.awards as award (award)}
-			<CheckboxRow
-				label={award}
-				checked={query.awards.includes(award)}
-				onchange={() => toggle('award', award)}
-			/>
-		{/each}
+		<OptionList
+			items={facets.awards}
+			selected={query.awards}
+			onselect={(value) => toggle('award', value)}
+		/>
 	</FilterSection>
 
 	<FilterSection title="Platform">
-		{#each facets.platforms as platform (platform)}
-			<CheckboxRow
-				label={platform}
-				checked={query.platforms.includes(platform)}
-				onchange={() => toggle('platform', platform)}
-			/>
-		{/each}
+		<OptionList
+			items={facets.platforms}
+			selected={query.platforms}
+			onselect={(value) => toggle('platform', value)}
+		/>
 	</FilterSection>
 
 	{#if extraOpen}
 		<FilterSection title="Organization">
-			<input
-				class="nested-search"
-				type="text"
-				bind:value={orgSearch}
-				placeholder="Search for an organization"
-			/>
-			{#each organizations as organization (organization)}
-				<CheckboxRow
-					label={organization}
-					checked={query.organizations.includes(organization)}
-					onchange={() => toggle('org', organization)}
+			{#snippet before()}
+				<input
+					class="nested-search"
+					type="text"
+					bind:value={orgSearch}
+					placeholder="Search for an organization"
 				/>
-			{/each}
+			{/snippet}
+			<OptionList
+				items={organizations}
+				selected={query.organizations}
+				onselect={(value) => toggle('org', value)}
+			/>
 		</FilterSection>
 
 		<FilterSection title="Years">
@@ -150,51 +145,49 @@
 		</label>
 
 		<FilterSection title="topic">
-			<input
-				class="nested-search"
-				type="text"
-				bind:value={topicSearch}
-				placeholder="Search for a topic"
-			/>
-			{#each topics as topic (topic)}
-				<CheckboxRow
-					label={topic}
-					checked={query.topics.includes(topic)}
-					onchange={() => toggle('topic', topic)}
+			{#snippet before()}
+				<input
+					class="nested-search"
+					type="text"
+					bind:value={topicSearch}
+					placeholder="Search for a topic"
 				/>
-			{/each}
+			{/snippet}
+			<OptionList
+				items={topics}
+				selected={query.topics}
+				onselect={(value) => toggle('topic', value)}
+			/>
 		</FilterSection>
 
 		<FilterSection title="Category">
-			<input
-				class="nested-search"
-				type="text"
-				bind:value={categorySearch}
-				placeholder="Search for a category"
-			/>
-			{#each categories as category (category)}
-				<CheckboxRow
-					label={category}
-					checked={query.categories.includes(category)}
-					onchange={() => toggle('category', category)}
+			{#snippet before()}
+				<input
+					class="nested-search"
+					type="text"
+					bind:value={categorySearch}
+					placeholder="Search for a category"
 				/>
-			{/each}
+			{/snippet}
+			<OptionList
+				items={categories}
+				selected={query.categories}
+				onselect={(value) => toggle('category', value)}
+			/>
 		</FilterSection>
 
 		<FilterSection title="special category">
-			{#each SPECIAL_FILTERS as special (special)}
-				<CheckboxRow
-					label={special}
-					checked={query.special.includes(special)}
-					onchange={() => toggle('special', special)}
-				/>
-			{/each}
+			<OptionList
+				items={[...SPECIAL_FILTERS]}
+				selected={query.special}
+				onselect={(value) => toggle('special', value)}
+			/>
 		</FilterSection>
 	{/if}
 
-	<button class="minimal" type="button" onclick={() => (extraOpen = !extraOpen)}>
-		{extraOpen ? 'minimal' : 'advanced'}
-		<span class={extraOpen ? 'dash' : 'plus'} aria-hidden="true"></span>
+	<button class="minimal slug" type="button" onclick={() => (extraOpen = !extraOpen)}>
+		{extraOpen ? 'minimize filters' : 'advanced filters'}
+		<PlusMinus minus={extraOpen} size={22} />
 	</button>
 </aside>
 
@@ -230,10 +223,12 @@
 		border: var(--border-width) solid var(--color-ink);
 		background: var(--color-input);
 		padding: 0 8px;
+		font-size: 14px;
+		font-weight: 300;
 	}
 
 	input::placeholder {
-		color: var(--color-muted);
+		color: var(--color-faint);
 	}
 
 	.nested-search {
@@ -247,44 +242,6 @@
 		width: 100%;
 		border-top: var(--border-width) solid var(--color-ink);
 		padding: 18px 18px 18px var(--filter-inset);
-		font-family: var(--font-serif);
-		font-size: 17px;
-		font-weight: 700;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		color: var(--color-faint);
-	}
-
-	.dash {
-		width: 13px;
-		border-top: 2px solid currentColor;
-	}
-
-	.plus {
-		position: relative;
-		width: 13px;
-		height: 13px;
-		flex: none;
-	}
-
-	.plus::before,
-	.plus::after {
-		content: '';
-		position: absolute;
-		background: currentColor;
-	}
-
-	.plus::before {
-		top: 5.5px;
-		left: 0;
-		width: 13px;
-		height: 2px;
-	}
-
-	.plus::after {
-		top: 0;
-		left: 5.5px;
-		width: 2px;
-		height: 13px;
+		color: var(--color-muted);
 	}
 </style>

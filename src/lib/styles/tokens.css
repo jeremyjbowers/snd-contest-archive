@@ -3,13 +3,13 @@
 	--color-bg: #f8f5f2;
 	--color-paper: #fffffe;
 	--color-ink: #232323;
-	--color-muted: #7b7b7b;
-	--color-faint: #909090;
+	--color-muted: hsl(28, 10%, 45%);
+	--color-faint: #B1A8A0;
 	--color-accent: #1ba098;
+	--color-pop: #EE624E;
 	--color-chip: #e5e0dc;
-	--color-input: #fbfaf9;
+	--color-input: var(--color-paper);
 	--color-award: #d9d9d9;
-	--color-header-wash: #f8f5f2;
 	--border-width: 1.5px;
 	--page-gutter: 34px;
 	--page-max: 1512px; /* content measure; header bar matches so nav aligns with the rail/grid borders */
@@ -32,7 +32,6 @@
 	--color-chip: #3a3732;
 	--color-input: #241f1c;
 	--color-award: #5c5852;
-	--color-header-wash: #1c1b19;
 	--shadow-menu: 0 12px 40px rgb(0 0 0 / 0.4);
 }
 

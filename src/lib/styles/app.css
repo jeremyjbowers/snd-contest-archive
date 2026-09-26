@@ -63,10 +63,27 @@ p {
 	outline-offset: 2px;
 }
 
+/* SCROLLBARS */
+* {
+	--color-scrollbar: hsl(27, 15%, 86%);
+	scrollbar-width: thin;
+	scrollbar-color: var(--color-scrollbar) transparent;
+}
+*::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+	background: var(--color-scrollbar);
+}
+
+/* TYPOGRAPHY */
 .slug {
 	font-family: var(--font-sans);
-	font-weight: 600;
-	letter-spacing: 0.08em;
+	font-size: 14px;
+	font-weight: 200;
+	font-stretch: 92%;
+	letter-spacing: 0.06em;
 	text-transform: uppercase;
 }
 
@@ -88,9 +105,17 @@ p {
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
 }
+/* .slug-light {
+	font-family: var(--font-sans);
+	font-size: 14px;
+	font-weight: 800;
+	font-stretch: 65%;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+} */
 .all-caps-serif {
 	font-family: var(--font-serif);
-	font-size: 17px;
+	font-size: 16px;
 	font-weight: 800;
 	letter-spacing: 0.05em;
 	text-transform: uppercase;
@@ -99,4 +124,7 @@ p {
 	font-family: var(--font-serif);
 	font-size: 16px;
 	font-weight: 800;
+}
+.year {
+	letter-spacing: -0.03em; /* digit-only text reads loose */
 }

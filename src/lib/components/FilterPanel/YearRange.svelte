@@ -120,15 +120,15 @@
 		onpointerdown={(event) => start('high', event)}
 		onkeydown={(event) => onKey('high', event)}
 	></div>
-	<span class="year" style="left: {lowPct}%">{low}</span>
-	<span class="year" style="left: {highPct}%">{high}</span>
+	<span class="year list-sans" style="left: {lowPct}%">{low}</span>
+	<span class="year list-sans" style="left: {highPct}%">{high}</span>
 </div>
 
 <style>
 	.slider {
 		position: relative;
 		height: 36px;
-		margin: 8px 0 4px;
+		margin: 0 20px;
 		touch-action: none;
 		user-select: none;
 	}
@@ -172,7 +172,7 @@
 	.year {
 		position: absolute;
 		top: 16px;
-		font-size: 16px;
+		font-size: 14px;
 		font-weight: 300;
 		transform: translateX(-50%);
 		white-space: nowrap;

@@ -56,6 +56,12 @@
 		background: var(--color-chip);
 	}
 
+	.media::after {
+		content: ''; /* stretches the link over the whole card */
+		position: absolute;
+		inset: 0;
+	}
+
 	.media img {
 		width: 100%;
 		height: 100%;
@@ -69,6 +75,7 @@
 		width: 24px;
 		height: 24px;
 		color: var(--color-ink);
+		z-index: 1;
 	}
 
 	.card-info {
@@ -99,7 +106,7 @@
 		transition: transform 0.45s ease;
 	}
 
-	.publication:hover span {
+	.card:hover .publication span {
 		transform: translateX(min(0px, calc(100cqw - 100% - var(--fade) + 0.5em))); /* ends just left of the fade */
 		transition-duration: 0.7s;
 		transition-timing-function: linear;
@@ -120,8 +127,5 @@
 		.publication span {
 			transition: none;
 		}
-	}
-	.year {
-		letter-spacing: -0.03em;
 	}
 </style>
