@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import EntryCard from '$lib/components/EntryCard.svelte';
-	import FilterPanel from '$lib/components/FilterPanel.svelte';
+	import EntryCard from '$lib/components/Grid/EntryCard.svelte';
+	import FilterPanel from '$lib/components/FilterPanel/FilterPanel.svelte';
 	import { favoriteIds } from '$lib/favorites.svelte';
 	import type { PageProps } from './$types';
 

@@ -22,7 +22,7 @@
 		--box-radius: 2px;
 
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		gap: 7px;
 		cursor: pointer;
 	}

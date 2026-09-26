@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import Header from '$lib/components/Header.svelte';
+	import Header from '$lib/components/NavBar/Header.svelte';
 	import { initFavorites } from '$lib/favorites.svelte';
 	import { initTheme } from '$lib/theme.svelte';
 	import '$lib/styles/app.css';
@@ -14,7 +14,7 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href="/assets/logo.png" />
+	<link class='logo' rel="icon" href="/assets/logo.png" />
 	<title>the Archive — SND</title>
 </svelte:head>
 

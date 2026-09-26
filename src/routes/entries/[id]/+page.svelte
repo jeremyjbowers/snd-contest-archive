@@ -1,5 +1,6 @@
 <script lang="ts">
-	import AwardFlag from '$lib/components/AwardFlag.svelte';
+	import AwardFlag from '$lib/components/Grid/AwardFlag.svelte';
+	import Heart from '$lib/components/Icons/Heart.svelte';
 	import { isFavorite, toggleFavorite } from '$lib/favorites.svelte';
 	import type { PageProps } from './$types';
 
@@ -29,7 +30,7 @@
 <article class="page">
 	<aside class="meta">
 		<p class="year">{entry.year}</p>
-		<AwardFlag />
+		<AwardFlag award={entry.award} />
 		<h1>{entry.publication}</h1>
 		<p class="work-title">{entry.title}</p>
 
@@ -69,13 +70,13 @@
 		</dl>
 
 		<div class="share">
-			<button type="button" aria-label="Favorite" onclick={() => toggleFavorite(entry.id)}>
-				<img
-					src={favorited ? '/assets/icons/heart-filled.svg' : '/assets/icons/heart.svg'}
-					alt=""
-					width="24"
-					height="24"
-				/>
+			<button
+				type="button"
+				aria-label="Favorite"
+				aria-pressed={favorited}
+				onclick={() => toggleFavorite(entry.id)}
+			>
+				<Heart size={24} filled={favorited} />
 			</button>
 			<button type="button" aria-label="Share" onclick={share}>
 				<img src="/assets/icons/share.svg" alt="" width="24" height="24" />

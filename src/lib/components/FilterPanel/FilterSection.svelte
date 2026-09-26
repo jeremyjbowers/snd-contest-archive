@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import Icon from './Icon.svelte';
+	import Caret from '../Icons/Caret.svelte';
 
 	let {
 		title,
@@ -17,7 +17,7 @@
 	<button class="head" type="button" aria-expanded={open} onclick={() => (open = !open)}>
 		<span class="title all-caps-serif">{title}</span>
 		<span class="caret" class:closed={!open}>
-			<Icon name="caret" width={24} />
+			<Caret size={24} />
 		</span>
 	</button>
 	{#if open}

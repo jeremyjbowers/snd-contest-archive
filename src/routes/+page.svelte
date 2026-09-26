@@ -1,6 +1,6 @@
 <script lang="ts">
-	import EntryCard from '$lib/components/EntryCard.svelte';
-	import FilterPanel from '$lib/components/FilterPanel.svelte';
+	import EntryCard from '$lib/components/Grid/EntryCard.svelte';
+	import FilterPanel from '$lib/components/FilterPanel/FilterPanel.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -15,8 +15,8 @@
 		<div class="kicker">
 			<p class="the">the</p>
 			<h1>Archive</h1>
+			<p class="lede">Winners from the past TK years of the Creative Competition</p>
 		</div>
-		<p class="lede">Winners from the past TK years of the Creative Competition</p>
 		<FilterPanel facets={data.facets} query={data.query} />
 	</div>
 
@@ -56,7 +56,10 @@
 
 	.kicker {
 		position: relative;
-		margin-bottom: 8px;
+		margin-bottom: 16px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
 	}
 
 	.the {
@@ -64,22 +67,25 @@
 		font-style: italic;
 		font-weight: 300;
 		font-size: 20px;
+		text-box-edge: cap alphabetic;
+		text-box-trim: trim-both;
 	}
 
 	h1 {
 		font-family: var(--font-serif);
-		font-size: clamp(48px, 6vw, 64px);
+		font-size: clamp(48px, 6vw, 70px);
 		font-weight: 700;
-		line-height: 0.95;
-		letter-spacing: -0.02em;
+		letter-spacing: -0.05em;
+		text-box-edge: cap alphabetic;
+		text-box-trim: trim-both;
 	}
 
 	.lede {
+		font-family: var(--font-sans);
 		color: var(--color-muted);
 		font-size: 13px;
 		font-weight: 200;
-		margin: 12px 0 28px;
-		max-width: 264px;
+		font-stretch: 80%;
 	}
 
 	.grid {

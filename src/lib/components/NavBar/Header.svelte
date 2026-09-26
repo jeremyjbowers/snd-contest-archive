@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { cycleTheme } from '$lib/theme.svelte';
 	import { favoriteIds } from '$lib/favorites.svelte';
-	import Icon from './Icon.svelte';
+	import Burger from '../Icons/Burger.svelte';
 
 	let menuOpen = $state(false);
 	let menuRoot = $state<HTMLDivElement | undefined>(undefined);
@@ -41,7 +40,7 @@
 				aria-controls="site-menu"
 				onclick={toggleMenu}
 			>
-				<span class="burger" aria-hidden="true"></span>
+				<Burger size={18} />
 				MENU
 			</button>
 			{#if menuOpen}
@@ -121,17 +120,10 @@
 		color: var(--color-bg);
 	}
 
-	.burger {
-		width: 13px;
-		height: 12px;
-		flex: none;
-		background: currentColor;
-		mask: url('/assets/icons/menu.svg') center / 13px 12px no-repeat;
-	}
-
 	.logo {
 		display: flex;
 		justify-content: center;
+		filter: brightness(0);
 	}
 
 	.logo img {

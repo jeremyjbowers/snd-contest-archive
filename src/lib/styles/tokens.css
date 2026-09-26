@@ -13,7 +13,7 @@
 	--border-width: 1.5px;
 	--page-gutter: 34px;
 	--page-max: 1512px; /* content measure; header bar matches so nav aligns with the rail/grid borders */
-	--filter-width: 325px;
+	--filter-width: 300px;
 	--filter-inset: 10px;
 	--filter-control: 247px;
 	--header-height: 50px;

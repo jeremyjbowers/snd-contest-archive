@@ -2,6 +2,7 @@
 	import type { EntrySummary } from '$lib/catalog/types';
 	import { isFavorite, toggleFavorite } from '$lib/favorites.svelte';
 	import { resolve } from '$app/paths';
+	import Heart from '../Icons/Heart.svelte';
 	import AwardFlag from './AwardFlag.svelte';
 
 	let { entry }: { entry: EntrySummary } = $props();
@@ -21,17 +22,14 @@
 		aria-pressed={favorited}
 		onclick={() => toggleFavorite(entry.id)}
 	>
-		<img
-			src={favorited ? '/assets/icons/heart-filled.svg' : '/assets/icons/heart.svg'}
-			alt=""
-			width="24"
-			height="24"
-		/>
+		<Heart size={20} filled={favorited} />
 	</button>
 	<div class="card-info">
-		<p class="publication title-serif">{entry.publication}</p>
+		<p class="publication title-serif">
+			<span>{entry.publication}</span>
+		</p>
 		<div class="award">
-			<AwardFlag />
+			<AwardFlag award={entry.award} />
 		</div>
 		<p class="category list-sans">{entry.category}</p>
 		<p class="year list-sans">{entry.year}</p>
@@ -70,25 +68,60 @@
 		right: 20px;
 		width: 24px;
 		height: 24px;
-	}
-
-	.heart img {
-		width: 24px;
-		height: 24px;
+		color: var(--color-ink);
 	}
 
 	.card-info {
 		display: grid;
-		grid-template-columns: 2fr 1fr;
-		grid-template-rows: 2fr 1fr;
+		grid-template-columns: minmax(0, 1fr) auto;
+		row-gap: 8px; /* space between top and bottom rows */
+		column-gap: 2px;
+		align-items: center;
 	}
 
-	
+	.award,
+	.year {
+		justify-self: end;
+	}
+	.publication {
+		--fade: 1.5em; /* width of the fade at the right edge */
 
-	.award {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		flex: none;
+		position: relative;
+		min-width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: clip;
+		container-type: inline-size;
+	}
+
+	.publication span {
+		display: inline-block;
+		transition: transform 0.45s ease;
+	}
+
+	.publication:hover span {
+		transform: translateX(min(0px, calc(100cqw - 100% - var(--fade) + 0.5em))); /* ends just left of the fade */
+		transition-duration: 0.7s;
+		transition-timing-function: linear;
+	}
+
+	.publication::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: var(--fade);
+		background: linear-gradient(to right, transparent, var(--color-paper));
+		pointer-events: none;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.publication span {
+			transition: none;
+		}
+	}
+	.year {
+		letter-spacing: -0.03em;
 	}
 </style>
