@@ -8,14 +8,15 @@
 	let menuRoot = $state<HTMLDivElement | undefined>(undefined);
 
 	const links = [
-		{ href: '/about', label: 'about snd' },
-		{ href: '/membership', label: 'membership' },
-		{ href: '/competition', label: 'competition' },
-		{ href: '/challenge', label: 'snd challenge' },
-		{ href: '/', label: 'archive' }
+		{ href: '/about', label: 'about the archive' },
+		{ href: 'https://www.snd.org', label: 'snd home' }
+		// { href: '/membership', label: 'membership' },
+		// { href: '/competition', label: 'competition' },
+		// { href: '/challenge', label: 'snd challenge' },
+		// { href: '/', label: 'archive' }
 	] as const;
 
-	const favoritesCount = $derived(favoriteIds().length);
+	// const favoritesCount = $derived(favoriteIds().length);
 
 	function toggleMenu() {
 		menuOpen = !menuOpen;
@@ -47,7 +48,7 @@
 				<nav id="site-menu" class="dropdown" aria-label="Site">
 					{#each links as link (link.href)}
 						<a
-							href={resolve(link.href)}
+							href={link.label.includes('snd') ? link.href : resolve(link.href)}
 							aria-current={page.url.pathname === link.href ? 'page' : undefined}
 							onclick={() => (menuOpen = false)}>{link.label}</a
 						>
@@ -60,7 +61,7 @@
 			<img src="/assets/logo.png" alt="snd" width="86" height="31" />
 		</a>
 
-		<nav class="right" aria-label="Account">
+		<nav class="right">
 			<a
 				class="nav-link"
 				href={resolve('/favorites')}
@@ -68,7 +69,7 @@
 			>
 				Favorites
 			</a>
-			<a class="nav-link" href={resolve('/account')}>account</a>
+			<!-- <a class="nav-link" href={resolve('/account')}>account</a> -->
 		</nav>
 	</div>
 
@@ -102,11 +103,13 @@
 		height: min-content;
 		display: flex;
 		gap: 13px;
+		position: relative;
 	}
 	.menu-btn {
 		display: inline-flex;
 		align-items: center;
 		gap: 5px;
+		padding: 5px 8px 0 0;
 	}
 
 	.mark {
@@ -138,8 +141,8 @@
 	.dropdown {
 		position: absolute;
 		top: 100%;
-		left: -8px;
-		width: 314px;
+		left: 0;
+		width: var(--filter-width);
 		background: var(--color-ink);
 		border: var(--border-width) solid var(--color-ink);
 		padding: 35px 20px;

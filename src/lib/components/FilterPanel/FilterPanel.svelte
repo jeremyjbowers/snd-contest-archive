@@ -186,7 +186,7 @@
 	{/if}
 
 	<button class="minimal slug" type="button" onclick={() => (extraOpen = !extraOpen)}>
-		{extraOpen ? 'minimize filters' : 'advanced filters'}
+		{extraOpen ? 'hide advanced filters' : 'advanced filters'}
 		<PlusMinus minus={extraOpen} size={22} />
 	</button>
 </aside>

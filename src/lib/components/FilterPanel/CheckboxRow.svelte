@@ -18,10 +18,14 @@
 			<polyline points="4.56 11.59 9.55 16.58 19.44 6.69" />
 		</svg>
 	</span>
-	<span>{label}</span>
+	<span class='label'>{label}</span>
 </label>
 
 <style>
+	.label {
+		text-box-edge: cap alphabetic;
+		text-box-trim: trim-both;
+	}
 	.row {
 		--box-size: 16px;
 		--box-stroke: 1.5px;
