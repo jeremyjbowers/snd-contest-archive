@@ -1,5 +1,5 @@
 <script lang="ts">
-	import EntryCard from '$lib/components/Grid/EntryCard.svelte';
+	import EntryGrid from '$lib/components/Grid/EntryGrid.svelte';
 	import FilterPanel from '$lib/components/FilterPanel/FilterPanel.svelte';
 	import type { PageProps } from './$types';
 
@@ -21,11 +21,8 @@
 	</div>
 
 	<section class="grid" aria-label="Archive entries">
-		{#if data.entries.length}
-			{#each data.entries as entry (entry.id)}
-				<EntryCard {entry} />
-			{/each}
-		{:else}
+		<EntryGrid entries={data.entries} />
+		{#if !data.entries.length}
 			<p class="empty">
 				No entries match those filters yet. This grid is still running on mock data.
 			</p>
@@ -46,7 +43,7 @@
 		grid-template-columns: var(--filter-width) minmax(0, 1fr);
 		grid-template-rows: minmax(0, 1fr);
 		/* gap: 35px; */
-		padding: 12px var(--page-gutter);
+		padding: var(--page-margin);
 		max-width: var(--page-max);
 		margin: 0 auto;
 		height: calc(100dvh - var(--header-height) - var(--border-width));
@@ -90,6 +87,7 @@
 
 	.grid {
 		display: grid;
+		position: relative;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 46px 19px;
 		align-content: start;

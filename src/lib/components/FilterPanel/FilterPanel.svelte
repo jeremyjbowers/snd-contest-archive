@@ -3,10 +3,13 @@
 	import { page } from '$app/state';
 	import { SPECIAL_FILTERS, type EntryQuery, type Facets } from '$lib/catalog/types';
 	import { setOrDelete, toggleListParam, type ListParam } from '$lib/catalog/url';
+	import { slide } from 'svelte/transition';
 	import PlusMinus from '../Icons/PlusMinus.svelte';
 	import FilterSection from './FilterSection.svelte';
 	import OptionList from './OptionList.svelte';
 	import YearRange from './YearRange.svelte';
+
+	const SLIDE_MS = 300;
 
 	let { facets, query }: { facets: Facets; query: EntryQuery } = $props();
 
@@ -71,8 +74,8 @@
 </script>
 
 <aside class="panel">
-	<label class="search-block">
-		<span class="label">Search for...</span>
+	<section class="search-block">
+		<span class="submenu-title">Search for...</span>
 		<input
 			type="text"
 			bind:value={search}
@@ -80,7 +83,7 @@
 			onkeydown={(event) => event.key === 'Enter' && commitSearch()}
 			onblur={commitSearch}
 		/>
-	</label>
+	</section>
 
 	<FilterSection title="design discipline">
 		<OptionList
@@ -107,82 +110,84 @@
 	</FilterSection>
 
 	{#if extraOpen}
-		<FilterSection title="Organization">
-			{#snippet before()}
-				<input
-					class="nested-search"
-					type="text"
-					bind:value={orgSearch}
-					placeholder="Search for an organization"
+		<div class="extra" transition:slide={{ duration: SLIDE_MS }}>
+			<FilterSection title="Organization">
+				{#snippet before()}
+					<input
+						class="nested-search"
+						type="text"
+						bind:value={orgSearch}
+						placeholder="Search for an organization"
+					/>
+				{/snippet}
+				<OptionList
+					items={organizations}
+					selected={query.organizations}
+					onselect={(value) => toggle('org', value)}
 				/>
-			{/snippet}
-			<OptionList
-				items={organizations}
-				selected={query.organizations}
-				onselect={(value) => toggle('org', value)}
-			/>
-		</FilterSection>
+			</FilterSection>
 
-		<FilterSection title="Years">
-			<YearRange
-				min={facets.yearMin}
-				max={facets.yearMax}
-				bind:low={yearMin}
-				bind:high={yearMax}
-				oncommit={commitYears}
-			/>
-		</FilterSection>
-
-		<label class="search-block">
-			<span class="label">Person</span>
-			<input
-				type="text"
-				bind:value={person}
-				placeholder="Search for an individual"
-				onkeydown={(event) => event.key === 'Enter' && commitPerson()}
-				onblur={commitPerson}
-			/>
-		</label>
-
-		<FilterSection title="topic">
-			{#snippet before()}
-				<input
-					class="nested-search"
-					type="text"
-					bind:value={topicSearch}
-					placeholder="Search for a topic"
+			<FilterSection title="Years">
+				<YearRange
+					min={facets.yearMin}
+					max={facets.yearMax}
+					bind:low={yearMin}
+					bind:high={yearMax}
+					oncommit={commitYears}
 				/>
-			{/snippet}
-			<OptionList
-				items={topics}
-				selected={query.topics}
-				onselect={(value) => toggle('topic', value)}
-			/>
-		</FilterSection>
+			</FilterSection>
 
-		<FilterSection title="Category">
-			{#snippet before()}
+			<section class="search-block">
+				<span class="submenu-title">Person</span>
 				<input
-					class="nested-search"
 					type="text"
-					bind:value={categorySearch}
-					placeholder="Search for a category"
+					bind:value={person}
+					placeholder="Search for an individual"
+					onkeydown={(event) => event.key === 'Enter' && commitPerson()}
+					onblur={commitPerson}
 				/>
-			{/snippet}
-			<OptionList
-				items={categories}
-				selected={query.categories}
-				onselect={(value) => toggle('category', value)}
-			/>
-		</FilterSection>
+			</section>
 
-		<FilterSection title="special category">
-			<OptionList
-				items={[...SPECIAL_FILTERS]}
-				selected={query.special}
-				onselect={(value) => toggle('special', value)}
-			/>
-		</FilterSection>
+			<FilterSection title="topic">
+				{#snippet before()}
+					<input
+						class="nested-search"
+						type="text"
+						bind:value={topicSearch}
+						placeholder="Search for a topic"
+					/>
+				{/snippet}
+				<OptionList
+					items={topics}
+					selected={query.topics}
+					onselect={(value) => toggle('topic', value)}
+				/>
+			</FilterSection>
+
+			<FilterSection title="Category">
+				{#snippet before()}
+					<input
+						class="nested-search"
+						type="text"
+						bind:value={categorySearch}
+						placeholder="Search for a category"
+					/>
+				{/snippet}
+				<OptionList
+					items={categories}
+					selected={query.categories}
+					onselect={(value) => toggle('category', value)}
+				/>
+			</FilterSection>
+
+			<FilterSection title="special category">
+				<OptionList
+					items={[...SPECIAL_FILTERS]}
+					selected={query.special}
+					onselect={(value) => toggle('special', value)}
+				/>
+			</FilterSection>
+		</div>
 	{/if}
 
 	<button class="minimal slug" type="button" onclick={() => (extraOpen = !extraOpen)}>
@@ -202,10 +207,9 @@
 		display: block;
 		width: 100%;
 		border-top: var(--border-width) solid var(--color-ink);
-		padding: 18px 26px 16px var(--filter-inset);
+		padding: 18px var(--filter-inset);
 	}
-
-	.label {
+	.submenu-title {
 		display: block;
 		font-family: var(--font-serif);
 		font-size: 17px;

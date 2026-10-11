@@ -33,13 +33,13 @@
 		</div>
 		<p class="category list-sans">{entry.category}</p>
 		<p class="year list-sans">{entry.year}</p>
-
 	</div>
 </article>
 
 <style>
 	.card {
 		position: relative;
+		height: 100%;
 		background: var(--color-paper);
 		border: var(--border-width) solid var(--color-ink);
 		padding: 12px;
@@ -107,7 +107,9 @@
 	}
 
 	.card:hover .publication span {
-		transform: translateX(min(0px, calc(100cqw - 100% - var(--fade) + 0.5em))); /* ends just left of the fade */
+		transform: translateX(
+			min(0px, calc(100cqw - 100% - var(--fade) + 0.5em))
+		); /* ends just left of the fade */
 		transition-duration: 0.7s;
 		transition-timing-function: linear;
 	}

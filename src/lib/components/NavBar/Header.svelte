@@ -2,10 +2,20 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { favoriteIds } from '$lib/favorites.svelte';
+	import { cubicOut } from 'svelte/easing';
+	import { prefersReducedMotion } from 'svelte/motion';
+	import { slide } from 'svelte/transition';
 	import Burger from '../Icons/Burger.svelte';
+	import Heart from '../Icons/Heart.svelte';
+
+	const MENU_MS = 300;
+	const MARK = 18;
+	const HEART = 16;
 
 	let menuOpen = $state(false);
-	let menuRoot = $state<HTMLDivElement | undefined>(undefined);
+	let pointerOver = false; // mouse is inside the button or the open panel
+
+	const menuDuration = $derived(prefersReducedMotion.current ? 0 : MENU_MS);
 
 	const links = [
 		{ href: '/about', label: 'about the archive' },
@@ -18,21 +28,56 @@
 
 	// const favoritesCount = $derived(favoriteIds().length);
 
-	function toggleMenu() {
+	function hoverOpen(event: PointerEvent) {
+		if (event.pointerType !== 'mouse') return;
+		pointerOver = true;
+		menuOpen = true;
+	}
+
+	function hoverClose(event: PointerEvent) {
+		if (event.pointerType !== 'mouse') return;
+		pointerOver = false;
+		menuOpen = false;
+	}
+
+	// A mouse click lands while the pointer is already over the button, so hover owns it.
+	function toggleMenu(event: MouseEvent) {
+		if (pointerOver && event.detail > 0) return;
 		menuOpen = !menuOpen;
 	}
 
-	function closeIfOutside(event: MouseEvent) {
-		if (menuRoot?.contains(event.target as Node)) return;
+	function closeIfFocusLeft(event: FocusEvent) {
+		const next = event.relatedTarget;
+		const root = event.currentTarget;
+		if (next instanceof Node && root instanceof Node && root.contains(next)) return;
+		if (pointerOver) return;
 		menuOpen = false;
+	}
+
+	function closeIfOutside(event: MouseEvent) {
+		const target = event.target;
+		if (target instanceof Element && target.closest('[data-menu-root]')) return;
+		menuOpen = false;
+	}
+
+	function onEscape(event: KeyboardEvent) {
+		if (event.key === 'Escape') menuOpen = false;
 	}
 </script>
 
-<svelte:window onclick={closeIfOutside} />
+<svelte:window onclick={closeIfOutside} onkeydown={onEscape} />
 
 <header class="header slug-bold">
 	<div class="bar">
-		<div class="left" bind:this={menuRoot}>
+		<div
+			class="left"
+			role="group"
+			aria-label="Site menu"
+			data-menu-root
+			onpointerenter={hoverOpen}
+			onpointerleave={hoverClose}
+			onfocusout={closeIfFocusLeft}
+		>
 			<button
 				class="menu-btn"
 				class:open={menuOpen}
@@ -40,12 +85,20 @@
 				aria-expanded={menuOpen}
 				aria-controls="site-menu"
 				onclick={toggleMenu}
+				style:--mark="{MARK}px"
 			>
-				<span class="mark"><Burger size={18} /></span>
+				<span class="mark">
+					<Burger size={MARK} collapsed={menuOpen} />
+				</span>
 				MENU
 			</button>
 			{#if menuOpen}
-				<nav id="site-menu" class="dropdown" aria-label="Site">
+				<nav
+					id="site-menu"
+					class="dropdown"
+					aria-label="Site"
+					transition:slide={{ duration: menuDuration, easing: cubicOut }}
+				>
 					{#each links as link (link.href)}
 						<a
 							href={link.label.includes('snd') ? link.href : resolve(link.href)}
@@ -66,8 +119,10 @@
 				class="nav-link"
 				href={resolve('/favorites')}
 				class:active={page.url.pathname === '/favorites'}
+				style:--heart="{HEART}px"
 			>
 				Favorites
+				<span class="heart"><Heart size={HEART} filled /></span>
 			</a>
 			<!-- <a class="nav-link" href={resolve('/account')}>account</a> -->
 		</nav>
@@ -81,6 +136,11 @@
 
 <style>
 	.header {
+		--menu-ms: 300ms;
+		--menu-ease: cubic-bezier(0.33, 1, 0.68, 1); /* matches cubicOut on the panel */
+		--gap: 5px; /* between word and icon */
+		--pad: 8px; /* chip padding beside the word */
+		--pad-y: 5px; /* chip padding above caps and below baseline */
 		position: sticky;
 		top: 0;
 		z-index: 20;
@@ -105,26 +165,115 @@
 		gap: 13px;
 		position: relative;
 	}
+
 	.menu-btn {
 		display: inline-flex;
 		align-items: center;
-		gap: 5px;
-		padding: 5px 8px 0 0;
+		gap: var(--gap);
+		padding: var(--pad-y) var(--pad) var(--pad-y) 0;
+		margin-right: 0;
+		line-height: 1; /* equal space above caps and below baseline */
+		color: var(--color-ink);
+		background-color: transparent;
+		white-space: nowrap;
+		transition:
+			gap var(--menu-ms) var(--menu-ease),
+			padding-left var(--menu-ms) var(--menu-ease),
+			margin-right var(--menu-ms) var(--menu-ease),
+			background-color var(--menu-ms) var(--menu-ease),
+			color var(--menu-ms) var(--menu-ease);
 	}
 
 	.mark {
 		display: flex;
-		transform: translateY(-1px); /* cap line of MENU */
+		justify-content: center;
+		align-items: center;
+		width: var(--mark);
+		height: 1lh; /* icon overflows a little so the chip stays one line tall, same as FAVORITES */
+		overflow: hidden;
+		transition: width var(--menu-ms) var(--menu-ease);
 	}
 
 	.menu-btn.open {
-		background: var(--color-ink);
+		gap: 0;
+		padding-left: var(--pad); /* match the right padding once the icon is gone */
+		margin-right: calc(var(--mark) + var(--gap) - var(--pad)); /* keeps total width fixed so the logo and hover area don't move */
+		background-color: var(--color-ink);
 		color: var(--color-bg);
+	}
+
+	.menu-btn.open .mark {
+		width: 0; /* MENU slides into the space the icon leaves */
+	}
+
+	.nav-link {
+		--heart-fill: currentColor; /* solid, same color as the word */
+		display: inline-flex;
+		align-items: center;
+		gap: 0;
+		padding: var(--pad-y) 0;
+		margin-left: calc(var(--heart) + var(--gap) + 2 * var(--pad)); /* room for the heart, held so the logo stays put */
+		line-height: 1;
+		color: var(--color-ink);
+		background-color: transparent;
+		transition:
+			gap var(--menu-ms) var(--menu-ease),
+			padding-inline var(--menu-ms) var(--menu-ease),
+			margin-left var(--menu-ms) var(--menu-ease),
+			background-color var(--menu-ms) var(--menu-ease),
+			color var(--menu-ms) var(--menu-ease);
+	}
+
+	.heart {
+		display: flex;
+		justify-content: center;
+		width: 0;
+		overflow: hidden;
+		transition: width var(--menu-ms) var(--menu-ease);
+	}
+
+	.heart :global(svg) {
+		transform: scale(0);
+		transition: transform var(--menu-ms) var(--menu-ease);
+	}
+
+	.nav-link.active {
+		color: var(--color-accent);
+	}
+
+	.nav-link:hover,
+	.nav-link:focus-visible {
+		gap: var(--gap);
+		padding-inline: var(--pad);
+		margin-left: 0;
+		background-color: var(--color-ink);
+		color: var(--color-bg);
+	}
+
+	.nav-link:hover .heart,
+	.nav-link:focus-visible .heart {
+		width: var(--heart);
+	}
+
+	.nav-link:hover :global(svg),
+	.nav-link:focus-visible :global(svg) {
+		transform: scale(1);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.menu-btn,
+		.mark,
+		.nav-link,
+		.heart,
+		.heart :global(svg) {
+			transition: none;
+		}
 	}
 
 	.logo {
 		display: flex;
 		justify-content: center;
+		margin-bottom: calc(var(--pad-y) + 1px); /* sits "snd" on the MENU / FAVORITES baseline */
 		filter: brightness(0);
 	}
 
@@ -132,10 +281,6 @@
 		width: auto;
 		height: 28px;
 		object-fit: contain;
-	}
-
-	.nav-link.active {
-		color: var(--color-accent);
 	}
 
 	.dropdown {

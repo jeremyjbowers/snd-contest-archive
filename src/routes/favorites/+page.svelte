@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import EntryCard from '$lib/components/Grid/EntryCard.svelte';
+	import EntryGrid from '$lib/components/Grid/EntryGrid.svelte';
 	import FilterPanel from '$lib/components/FilterPanel/FilterPanel.svelte';
 	import { favoriteIds } from '$lib/favorites.svelte';
 	import type { PageProps } from './$types';
@@ -22,11 +22,8 @@
 	</div>
 
 	<section class="grid" aria-label="Favorite entries">
-		{#if saved.length}
-			{#each saved as entry (entry.id)}
-				<EntryCard {entry} />
-			{/each}
-		{:else}
+		<EntryGrid entries={saved} />
+		{#if !saved.length}
 			<p class="empty">
 				{#if ids.length}
 					No favorites match those filters.
@@ -58,6 +55,7 @@
 
 	.grid {
 		display: grid;
+		position: relative;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 46px 19px;
 		align-content: start;

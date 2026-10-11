@@ -37,6 +37,6 @@
 	}
 
 	.filled path {
-		fill: var(--color-accent);
+		fill: var(--heart-fill, var(--color-accent));
 	}
 </style>

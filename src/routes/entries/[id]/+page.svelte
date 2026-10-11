@@ -32,7 +32,7 @@
 </svelte:head>
 
 <article class="page">
-	<aside class="meta">
+	<aside class="side-panel">
 		<p class="year slug">{entry.year}</p>
 		<AwardFlag award={entry.award} facing="right" />
 		<h1>{entry.publication}</h1>
@@ -112,14 +112,15 @@
 		height: calc(100dvh - var(--header-height) - var(--border-width));
 		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: 0 var(--page-gutter);
+		padding: var(--page-margin);
 		overflow: hidden;
 		contain: paint;
 	}
 
-	.meta {
+	.side-panel {
+		border-left: var(--border-width) solid var(--color-ink);
 		border-right: var(--border-width) solid var(--color-ink);
-		padding: 48px 50px 48px 16px;
+		padding: 60px calc(var(--filter-inset) *2) 0;
 		min-height: 0;
 		overflow-y: auto;
 	}
@@ -175,13 +176,14 @@
 	}
 
 	.gallery {
-		padding: var(--page-gutter) 0 var(--page-gutter) var(--page-gutter);
+		padding: var(--page-margin);
+		border-right: var(--border-width) solid var(--color-ink);
 		display: flex;
 		flex-direction: column;
 		justify-content: safe center;
 		gap: 24px;
 		min-height: 0;
-		overflow-y: auto;
+		overflow-y: scroll;
 		scrollbar-width: none;
 	}
 

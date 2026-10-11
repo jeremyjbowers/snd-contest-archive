@@ -19,7 +19,7 @@
 <style>
 	.page {
 		max-width: 720px;
-		padding: 80px var(--page-gutter) 120px;
+		padding: 80px var(--page-margin) 120px;
 	}
 
 	.kicker {
