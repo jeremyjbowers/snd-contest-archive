@@ -23,10 +23,11 @@ envs:
 
 services:
   - name: web
-    github:
-      repo: jeremyjbowers/snd-contest-archive
+    # Public git clone. The DigitalOcean GitHub app is not granted this repo,
+    # so the GitHub source type cannot see it.
+    git:
+      repo_clone_url: https://github.com/jeremyjbowers/snd-contest-archive.git
       branch: cursor/digitalocean-app-76e2
-      deploy_on_push: true
     environment_slug: node-js
     build_command: npm install --include=dev && npm run build
     run_command: node build/index.js
@@ -47,10 +48,9 @@ services:
 jobs:
   - name: migrate
     kind: PRE_DEPLOY
-    github:
-      repo: jeremyjbowers/snd-contest-archive
+    git:
+      repo_clone_url: https://github.com/jeremyjbowers/snd-contest-archive.git
       branch: cursor/digitalocean-app-76e2
-      deploy_on_push: true
     environment_slug: node-js
     build_command: npm install --include=dev
     run_command: npx tsx scripts/migrate.ts
