@@ -94,9 +94,10 @@ Favorites are `localStorage` (`src/lib/favorites.svelte.ts`) until accounts exis
 ## Commands
 
 ```sh
-npm run dev      # app
-npm run check    # types
-npm run format   # Prettier (tabs, single quotes)
+npm run dev             # app
+npm run check           # types
+npm run format          # Prettier (tabs, single quotes)
+npm run catalog:migrate # apply data/postgres.sql
 ```
 
 ## Not built yet

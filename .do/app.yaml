@@ -1,0 +1,72 @@
+# SND Archive. Provision with scripts/provision-digitalocean.ts so the app
+# is assigned to the DigitalOcean project named baseball, not Over slot.
+#
+# Cost: one shared 512 MiB service ($5/month) plus a 1 GiB single-node
+# Postgres cluster (about $15/month). The pre-deploy job runs only during
+# deploys. No standby node, no dedicated egress IP.
+name: snd-archive
+region: nyc
+alerts:
+  - rule: DEPLOYMENT_FAILED
+
+envs:
+  - key: NODE_ENV
+    scope: RUN_TIME
+    value: production
+  - key: NPM_CONFIG_PRODUCTION
+    scope: BUILD_TIME
+    value: "false"
+  - key: CATALOG_URL
+    scope: RUN_TIME
+    value: "${snd-db.DATABASE_URL}"
+
+services:
+  - name: web
+    github:
+      repo: jeremyjbowers/snd-contest-archive
+      branch: cursor/catalog-loaders-76e2
+      deploy_on_push: true
+    environment_slug: node-js
+    build_command: npm install --include=dev && npm run build
+    run_command: node build/index.js
+    http_port: 3000
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    instance_count: 1
+    envs:
+      - key: HOST
+        scope: RUN_TIME
+        value: 0.0.0.0
+    health_check:
+      http_path: /
+      initial_delay_seconds: 20
+      period_seconds: 10
+      timeout_seconds: 5
+      failure_threshold: 5
+
+jobs:
+  - name: migrate
+    kind: PRE_DEPLOY
+    github:
+      repo: jeremyjbowers/snd-contest-archive
+      branch: cursor/catalog-loaders-76e2
+      deploy_on_push: true
+    environment_slug: node-js
+    build_command: npm install --include=dev
+    run_command: npx tsx scripts/migrate.ts
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    instance_count: 1
+
+databases:
+  - name: snd-db
+    engine: PG
+    version: "16"
+    production: true
+    cluster_name: snd-archive-pg
+
+ingress:
+  rules:
+    - component:
+        name: web
+      match:
+        path:
+          prefix: /
