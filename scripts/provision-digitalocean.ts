@@ -1,7 +1,14 @@
 import { spawnSync } from 'node:child_process';
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { Client } from 'pg';
+import { fromAwardForceRows } from '../src/lib/catalog/ingest/award-force.ts';
+import { fromFilesCsv } from '../src/lib/catalog/ingest/files.ts';
+import { type SourceAsset, type SubmissionRecord } from '../src/lib/catalog/ingest/record.ts';
+import { loadCatalog } from '../src/lib/catalog/persist/load.ts';
 import { poolOptions } from '../src/lib/catalog/persist/pg.ts';
+import type { Sql } from '../src/lib/catalog/persist/sql.ts';
+import { readXlsxRows } from './read-xlsx.ts';
 import {
 	ARCHIVE_PROJECT_NAME,
 	findArchiveProject,
@@ -30,15 +37,17 @@ const cluster = await ensureCluster(project.id);
 console.log(`Postgres cluster ${cluster.name} is ${cluster.status} (${cluster.id})`);
 assign(project.id, `do:dbaas:${cluster.id}`);
 
-console.log('Opening the database to load the catalog, then closing it');
-const ruleUuid = appendFirewall(cluster.id, 'ip_addr:0.0.0.0/0');
+console.log('Reading contest files');
+const batch = await readContestBatch(contestFiles());
+console.log(`Read ${batch.records.length} contest rows`);
+const uri = await connectionUri(cluster.id);
+const rule = await connectForLoad(cluster.id, uri);
 try {
-	const uri = await connectionUri(cluster.id);
-	await waitForPostgres(uri);
-	const loaded = loadContestFiles(uri);
-	console.log(loaded ? 'Contest rows loaded' : 'No Award Force files found; schema applied only');
+	const result = await loadCatalog(clientSql(rule.client), batch);
+	console.log(JSON.stringify(result));
+	await rule.client.end();
 } finally {
-	if (ruleUuid) removeFirewall(cluster.id, ruleUuid);
+	if (rule.uuid) removeFirewall(cluster.id, rule.uuid);
 }
 
 const app = ensureApp(project.id);
@@ -268,23 +277,67 @@ async function ensureAppFirewall(databaseId: string, appId: string) {
 	}
 }
 
-async function waitForPostgres(uri: string) {
-	const { Pool } = await import('pg');
-	const options = poolOptions(uri);
+async function connectForLoad(
+	databaseId: string,
+	uri: string
+): Promise<{ client: Client; uuid?: string }> {
+	const { Client: PgClient } = await import('pg');
+	let allowed = '';
+	let uuid: string | undefined;
+	let last = 'unavailable';
 	for (let attempt = 1; attempt <= 8; attempt += 1) {
-		const pool = new Pool({ ...options, connectionTimeoutMillis: 8000, max: 1 });
+		const ip = (await fetch('https://api.ipify.org').then((response) => response.text())).trim();
+		if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
+			throw new Error(`Refusing to allow an unrecognized loader address: ${ip}`);
+		}
+		if (ip !== allowed) {
+			if (uuid) removeFirewall(databaseId, uuid);
+			uuid = appendFirewall(databaseId, `ip_addr:${ip}`);
+			allowed = ip;
+			console.log(`Allowing ${ip} to load the catalog`);
+		}
+		const client = new PgClient({ ...poolOptions(uri), connectionTimeoutMillis: 8000 });
 		try {
-			await pool.query('select 1');
-			await pool.end();
-			return;
+			await client.connect();
+			return { client, uuid };
 		} catch (error) {
-			await pool.end().catch(() => undefined);
-			const message = error instanceof Error ? error.message : 'unavailable';
-			console.log(`Waiting for Postgres (${attempt}/8): ${redact(message)}`);
-			await new Promise((resolve) => setTimeout(resolve, 10000));
+			await client.end().catch(() => undefined);
+			last = error instanceof Error ? error.message : 'unavailable';
+			console.log(`Waiting for Postgres (${attempt}/8): ${redact(last)}`);
+			await new Promise((resolve) => setTimeout(resolve, 5000));
 		}
 	}
-	throw new Error('Postgres did not accept connections from this machine');
+	if (uuid) removeFirewall(databaseId, uuid);
+	throw new Error(`Postgres did not accept connections from this machine: ${redact(last)}`);
+}
+
+function clientSql(client: Client): Sql {
+	return {
+		async query<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
+			const result = await client.query(sql, params);
+			return result.rows as T[];
+		},
+		async exec(sql: string) {
+			await client.query(sql);
+		}
+	};
+}
+
+async function readContestBatch(files: { xlsx: string[]; csv: string[] }): Promise<{
+	records: SubmissionRecord[];
+	assets: SourceAsset[];
+}> {
+	const records: SubmissionRecord[] = [];
+	const assets: SourceAsset[] = [];
+	for (const filePath of files.xlsx) {
+		const mapped = fromAwardForceRows(await readXlsxRows(filePath), `award-force:${filePath}`);
+		records.push(...mapped.records);
+		assets.push(...mapped.assets);
+	}
+	for (const filePath of files.csv) {
+		assets.push(...fromFilesCsv(readFileSync(filePath, 'utf8'), `award-force-files:${filePath}`));
+	}
+	return { records, assets };
 }
 
 async function connectionUri(databaseId: string): Promise<string> {
@@ -342,26 +395,6 @@ async function waitForDeployment(appId: string) {
 		if (Date.now() > deadline) throw new Error('Timed out waiting for the deployment');
 		await new Promise((resolve) => setTimeout(resolve, 15000));
 	}
-}
-
-function loadContestFiles(uri: string): boolean {
-	const files = contestFiles();
-	const args = files.xlsx.length
-		? [
-				'tsx',
-				'scripts/catalog.ts',
-				'load',
-				...files.xlsx.flatMap((file) => ['--award-force', file]),
-				...files.csv.flatMap((file) => ['--files', file])
-			]
-		: ['tsx', 'scripts/migrate.ts'];
-	const result = spawnSync('npx', args, {
-		encoding: 'utf8',
-		stdio: 'inherit',
-		env: { ...process.env, CATALOG_URL: uri, DIGITALOCEAN_ACCESS_TOKEN: token }
-	});
-	if (result.status !== 0) throw new Error('Catalog load failed');
-	return files.xlsx.length > 0;
 }
 
 function contestFiles(): { xlsx: string[]; csv: string[] } {
