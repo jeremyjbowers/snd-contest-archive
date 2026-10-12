@@ -1,5 +1,6 @@
 # SND Archive. Provision with scripts/provision-digitalocean.ts so the app
-# is assigned to the DigitalOcean project named baseball, not Over slot.
+# is assigned to the DigitalOcean project "SND design archive", on this
+# account rather than the Over Slot team.
 #
 # Cost: one shared 512 MiB service ($5/month) plus a 1 GiB single-node
 # Postgres cluster (about $15/month). The pre-deploy job runs only during

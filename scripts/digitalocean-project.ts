@@ -3,23 +3,32 @@ export type DigitalOceanProject = {
 	name: string;
 };
 
+export const ARCHIVE_PROJECT_NAME = 'SND design archive';
+
 const OVER_SLOT = /over[\s_-]*slot/i;
 
-/** Pick the baseball project. Never Over slot, even when it is the account default. */
-export function pickProject(projects: DigitalOceanProject[]): DigitalOceanProject {
-	const eligible = projects.filter((project) => !OVER_SLOT.test(project.name));
-	const exact = eligible.filter((project) => project.name.trim().toLowerCase() === 'baseball');
-	const chosen =
-		only(exact, 'named baseball') ??
-		only(
-			eligible.filter((project) => /baseball/i.test(project.name)),
-			'matching baseball'
-		);
+export function isOverSlotName(name: string): boolean {
+	return OVER_SLOT.test(name);
+}
 
-	if (!chosen || OVER_SLOT.test(chosen.name)) {
+/** The SND design archive project on this team, or undefined when it still has to be created. */
+export function findArchiveProject(
+	projects: DigitalOceanProject[]
+): DigitalOceanProject | undefined {
+	const eligible = projects.filter((project) => !isOverSlotName(project.name));
+	const exact = eligible.filter(
+		(project) => project.name.trim().toLowerCase() === ARCHIVE_PROJECT_NAME.toLowerCase()
+	);
+	return only(exact, `named ${ARCHIVE_PROJECT_NAME}`);
+}
+
+/** Pick the SND design archive project. Never a project on the Over Slot team. */
+export function pickProject(projects: DigitalOceanProject[]): DigitalOceanProject {
+	const chosen = findArchiveProject(projects);
+	if (!chosen || isOverSlotName(chosen.name)) {
 		const names = projects.map((project) => project.name).join(', ') || '(none)';
 		throw new Error(
-			`No DigitalOcean project named baseball. Refusing to use Over slot. Projects: ${names}`
+			`No DigitalOcean project named ${ARCHIVE_PROJECT_NAME}. Refusing to use the Over Slot team. Projects: ${names}`
 		);
 	}
 	return chosen;

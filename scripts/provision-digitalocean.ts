@@ -1,7 +1,12 @@
 import { spawnSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { pickProject, type DigitalOceanProject } from './digitalocean-project.ts';
+import {
+	ARCHIVE_PROJECT_NAME,
+	findArchiveProject,
+	isOverSlotName,
+	type DigitalOceanProject
+} from './digitalocean-project.ts';
 
 const CLUSTER_NAME = 'snd-archive-pg';
 const APP_NAME = 'snd-archive';
@@ -15,7 +20,9 @@ if (!token) {
 	process.exit(1);
 }
 
-const project = pickProject(asProjects(json(doctl(['projects', 'list', '-o', 'json']))));
+const projects = asProjects(json(doctl(['projects', 'list', '-o', 'json'])));
+assertNotOverslotTeam(projects);
+const project = findArchiveProject(projects) ?? createArchiveProject();
 console.log(`Using DigitalOcean project "${project.name}" (${project.id})`);
 
 const cluster = await ensureCluster(project.id);
@@ -50,7 +57,7 @@ console.log(
 			cluster: CLUSTER_NAME,
 			app: app.id,
 			url: app.url,
-			monthly: { web: 5, postgres: 15.15 }
+			monthly: { web: 5, postgres: 15.15, region: 'nyc3' }
 		},
 		null,
 		2
@@ -70,6 +77,48 @@ function doctl(args: string[]): string {
 
 function json(text: string): unknown {
 	return JSON.parse(text) as unknown;
+}
+
+function assertNotOverslotTeam(projects: DigitalOceanProject[]) {
+	const names = [
+		...projects.map((project) => project.name),
+		...listedApps().map((app) => app.name)
+	];
+	const overslot = names.filter((name) => isOverSlotName(name));
+	if (overslot.length > 0) {
+		throw new Error(
+			`This token can see Over Slot resources (${overslot.join(', ')}). Refusing to create billable resources on that team.`
+		);
+	}
+}
+
+function createArchiveProject(): DigitalOceanProject {
+	const value = json(
+		doctl([
+			'projects',
+			'create',
+			'--name',
+			ARCHIVE_PROJECT_NAME,
+			'--purpose',
+			'Web Application',
+			'--environment',
+			'Production',
+			'--description',
+			'SND contest archive',
+			'-o',
+			'json'
+		])
+	);
+	const record = Array.isArray(value) ? recordOf(value[0]) : recordOf(value);
+	const created = {
+		id: stringField(record, 'id', 'ID'),
+		name: stringField(record, 'name', 'Name') || ARCHIVE_PROJECT_NAME
+	};
+	if (!created.id || isOverSlotName(created.name)) {
+		throw new Error(`Could not create ${ARCHIVE_PROJECT_NAME} away from the Over Slot team`);
+	}
+	console.log(`Created DigitalOcean project "${created.name}"`);
+	return created;
 }
 
 function asProjects(value: unknown): DigitalOceanProject[] {
@@ -112,8 +161,8 @@ async function createCluster(
 		name: CLUSTER_NAME,
 		engine: 'pg',
 		version: '16',
-		region: 'nyc1',
-		size: 'db-s-1vcpu-1gb',
+		region: 'nyc3',
+		size: 'db-amd-1vcpu-1gb',
 		num_nodes: 1,
 		project_id: projectId
 	};
@@ -366,11 +415,11 @@ function assign(projectId: string, urn: string) {
 	doctl(['projects', 'resources', 'assign', projectId, '--resource', urn]);
 }
 
-function assertNotInOverSlot(baseball: DigitalOceanProject, databaseId: string, appId: string) {
-	const baseballUrns = resourceUrns(baseball.id);
+function assertNotInOverSlot(archive: DigitalOceanProject, databaseId: string, appId: string) {
+	const archiveUrns = resourceUrns(archive.id);
 	for (const id of [databaseId, appId]) {
-		if (!baseballUrns.some((urn) => urn.includes(id))) {
-			throw new Error(`${id} is not in DigitalOcean project ${baseball.name}`);
+		if (!archiveUrns.some((urn) => urn.includes(id))) {
+			throw new Error(`${id} is not in DigitalOcean project ${archive.name}`);
 		}
 	}
 	const projects = asProjects(json(doctl(['projects', 'list', '-o', 'json'])));
