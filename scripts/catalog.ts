@@ -22,6 +22,9 @@ type Options = {
 };
 
 const options = parseArgs(process.argv.slice(2));
+if (options.command === 'load' && !options.database) {
+	options.database = process.env.CATALOG_URL || process.env.DATABASE_URL;
+}
 const loaded = await readSources(options);
 const records = combineRecords(loaded.records);
 const report = modelFit(records, loaded.assets);

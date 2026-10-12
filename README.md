@@ -49,7 +49,17 @@ CATALOG_URL=postgres://user:pass@host:5432/snd
 
 **SQLite** uses `data/schema.sql`. Create a database with `sqlite3 data/archive.db < data/schema.sql`, load rows, then point `CATALOG_URL` at the file.
 
-**Postgres** is the persistence target for real contest data. `npm run catalog:load` creates the tables in `data/postgres.sql` and upserts rows. Point the app at them with `CATALOG_URL=postgres://user:pass@host:5432/snd`.
+**Postgres** is the persistence target for real contest data. `npm run catalog:migrate` creates the tables in `data/postgres.sql`. `npm run catalog:load` applies that schema and upserts rows. Point the app at them with `CATALOG_URL=postgres://user:pass@host:5432/snd`.
+
+## DigitalOcean
+
+`.do/app.yaml` is the App Platform spec: a 512 MiB web service and a pre-deploy job that runs `catalog:migrate`. The database is an existing managed Postgres cluster named `snd-archive-pg` (1 GiB, one node, about $15 a month). The web service is about $5 a month. There is no standby node.
+
+```sh
+DIGITALOCEAN_ACCESS_TOKEN=... npx tsx scripts/provision-digitalocean.ts
+```
+
+The script creates the cluster and the app in the DigitalOcean project named **baseball**. It will not put them in **Over slot**. Award Force workbooks stay off the image. When those files are on the machine running the script, it loads them through a temporary firewall rule and then removes that rule. After the catalog branch is merged, change the spec's `branch` to `main`.
 
 `npm run catalog:fit` reads Award Force workbooks, the expiring file-download CSV, and Airtable JSON dumps and reports how those rows sit on the catalog model. It does not write a database. Entrant emails, phone numbers, addresses, and paywall passwords are dropped before anything is stored. Download URLs from Award Force expire after about 48 hours, so they are stored as locators rather than as permanent thumbnails.
 
