@@ -35,12 +35,15 @@
 	<aside class="side-panel">
 		<p class="year slug">{entry.year}</p>
 		<AwardFlag award={entry.award} facing="right" />
+		{#if entry.awards.length > 1}
+			<p class="also">{entry.awards.filter((item) => item !== entry.award).join(' · ')}</p>
+		{/if}
 		<h1>{entry.publication}</h1>
 		<p class="work-title">{entry.title}</p>
 
 		<dl>
 			<div>
-				<dt class='slug'>Category</dt>
+				<dt class="slug">Category</dt>
 				<dd>
 					{entry.category}{#if entry.subcategory}
 						> {entry.subcategory}{/if}
@@ -48,19 +51,19 @@
 			</div>
 			{#if creditLine}
 				<div>
-					<dt class='slug'>Credits</dt>
+					<dt class="slug">Credits</dt>
 					<dd>{creditLine}</dd>
 				</div>
 			{/if}
 			{#if entry.description}
 				<div>
-					<dt class='slug'>Description</dt>
+					<dt class="slug">Description</dt>
 					<dd>{entry.description}</dd>
 				</div>
 			{/if}
 			{#if entry.url}
 				<div>
-					<dt class='slug'>Link</dt>
+					<dt class="slug">Link</dt>
 					<dd>
 						<a href={entry.url} rel="external noreferrer">{entry.url.replace(/^https?:\/\//, '')}</a
 						>
@@ -68,7 +71,7 @@
 				</div>
 			{/if}
 			<div>
-				<dt class='slug'>platform</dt>
+				<dt class="slug">platform</dt>
 				<dd>{entry.platform}</dd>
 			</div>
 		</dl>
@@ -117,10 +120,14 @@
 		contain: paint;
 	}
 
+	.also {
+		margin: 0;
+	}
+
 	.side-panel {
 		border-left: var(--border-width) solid var(--color-ink);
 		border-right: var(--border-width) solid var(--color-ink);
-		padding: 60px calc(var(--filter-inset) *2) 0;
+		padding: 60px calc(var(--filter-inset) * 2) 0;
 		min-height: 0;
 		overflow-y: auto;
 	}

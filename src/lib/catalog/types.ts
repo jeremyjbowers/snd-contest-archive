@@ -26,10 +26,22 @@ export type Entry = {
 	platform: string;
 	topic: string | null;
 	description: string | null;
+	/**
+	 * Judges' notes or a citation, when the source has one.
+	 * `description` is what the page shows: the entrant text, or this citation
+	 * when the entry has no entrant text.
+	 */
+	citation: string | null;
 	url: string | null;
 	thumbnail: string;
 	images: string[];
 	credits: Credit[];
+	/**
+	 * Every award on this record, primary first.
+	 * `award` is the one the card flag shows. Airtable often stores a medal
+	 * and a World's Best honor on the same row.
+	 */
+	awards: string[];
 	student: boolean;
 	nonEditorial: boolean;
 	multiWinner: boolean;
@@ -37,7 +49,10 @@ export type Entry = {
 };
 
 /** Card-sized view of an entry (no long description / image gallery). */
-export type EntrySummary = Omit<Entry, 'images' | 'credits' | 'description' | 'url'> & {
+export type EntrySummary = Omit<
+	Entry,
+	'images' | 'credits' | 'description' | 'citation' | 'url'
+> & {
 	imageCount: number;
 };
 

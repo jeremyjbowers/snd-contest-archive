@@ -32,6 +32,7 @@ export function toSummary(entry: Entry): EntrySummary {
 		platform: summary.platform,
 		topic: summary.topic,
 		thumbnail: summary.thumbnail,
+		awards: summary.awards?.length ? summary.awards : [summary.award],
 		student: summary.student,
 		nonEditorial: summary.nonEditorial,
 		multiWinner: summary.multiWinner,
@@ -42,6 +43,13 @@ export function toSummary(entry: Entry): EntrySummary {
 
 function matchesList(selected: string[] | undefined, value: string) {
 	return !selected?.length || selected.includes(value);
+}
+
+/** A selected award matches the flag or any other honor on the same entry. */
+function matchesAnyAward(selected: string[] | undefined, entry: Entry) {
+	if (!selected?.length) return true;
+	const awards = entry.awards?.length ? entry.awards : [entry.award];
+	return selected.some((award) => awards.includes(award));
 }
 
 function blob(entry: Entry) {
@@ -65,7 +73,7 @@ export function filterEntries(entries: Entry[], query: Partial<EntryQuery> = {})
 	return entries.filter((entry) => {
 		if (q && !blob(entry).includes(q)) return false;
 		if (!matchesList(query.disciplines, entry.discipline)) return false;
-		if (!matchesList(query.awards, entry.award)) return false;
+		if (!matchesAnyAward(query.awards, entry)) return false;
 		if (!matchesList(query.platforms, entry.platform)) return false;
 		if (!matchesList(query.organizations, entry.publication)) return false;
 		if (query.topics?.length && (!entry.topic || !query.topics.includes(entry.topic))) return false;

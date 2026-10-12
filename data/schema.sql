@@ -1,5 +1,6 @@
--- Shared catalog schema for SQLite and (later) Postgres.
--- CSV remains the default mock; this is the shape to migrate into.
+-- Shared catalog schema for SQLite and Postgres.
+-- CSV remains the default mock; this is the shape the loaders write.
+-- Postgres also has source_submissions and source_assets (see data/postgres.sql).
 
 CREATE TABLE IF NOT EXISTS entries (
 	id TEXT PRIMARY KEY,
@@ -18,7 +19,11 @@ CREATE TABLE IF NOT EXISTS entries (
 	student INTEGER NOT NULL DEFAULT 0,
 	non_editorial INTEGER NOT NULL DEFAULT 0,
 	multi_winner INTEGER NOT NULL DEFAULT 0,
-	access TEXT NOT NULL DEFAULT 'public'
+	access TEXT NOT NULL DEFAULT 'public',
+	awards TEXT NOT NULL DEFAULT '[]',
+	citation TEXT,
+	source TEXT,
+	source_key TEXT
 );
 
 CREATE TABLE IF NOT EXISTS entry_images (
@@ -37,3 +42,5 @@ CREATE TABLE IF NOT EXISTS credits (
 CREATE INDEX IF NOT EXISTS entries_year_idx ON entries(year);
 CREATE INDEX IF NOT EXISTS entries_publication_idx ON entries(publication);
 CREATE INDEX IF NOT EXISTS entries_award_idx ON entries(award);
+CREATE UNIQUE INDEX IF NOT EXISTS entries_source_key_idx ON entries(source_key)
+	WHERE source_key IS NOT NULL;

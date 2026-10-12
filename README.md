@@ -49,7 +49,9 @@ CATALOG_URL=postgres://user:pass@host:5432/snd
 
 **SQLite** uses `data/schema.sql`. Create a database with `sqlite3 data/archive.db < data/schema.sql`, load rows, then point `CATALOG_URL` at the file.
 
-**Postgres** is a stub with the same TypeScript interface. It will throw until the backend is implemented — that is intentional.
+**Postgres** is the persistence target for real contest data. `npm run catalog:load` creates the tables in `data/postgres.sql` and upserts rows. Point the app at them with `CATALOG_URL=postgres://user:pass@host:5432/snd`.
+
+`npm run catalog:fit` reads Award Force workbooks, the expiring file-download CSV, and Airtable JSON dumps and reports how those rows sit on the catalog model. It does not write a database. Entrant emails, phone numbers, addresses, and paywall passwords are dropped before anything is stored. Download URLs from Award Force expire after about 48 hours, so they are stored as locators rather than as permanent thumbnails.
 
 ## Type
 

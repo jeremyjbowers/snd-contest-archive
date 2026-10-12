@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { favoriteIds } from '$lib/favorites.svelte';
 	import { cubicOut } from 'svelte/easing';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { slide } from 'svelte/transition';
@@ -17,16 +16,14 @@
 
 	const menuDuration = $derived(prefersReducedMotion.current ? 0 : MENU_MS);
 
-	const links = [
-		{ href: '/about', label: 'about the archive' },
-		{ href: 'https://www.snd.org', label: 'snd home' }
+	const internalLinks = [
+		{ href: '/about', label: 'about the archive' }
 		// { href: '/membership', label: 'membership' },
 		// { href: '/competition', label: 'competition' },
 		// { href: '/challenge', label: 'snd challenge' },
 		// { href: '/', label: 'archive' }
 	] as const;
-
-	// const favoritesCount = $derived(favoriteIds().length);
+	const externalLinks = [{ href: 'https://www.snd.org', label: 'snd home' }] as const;
 
 	function hoverOpen(event: PointerEvent) {
 		if (event.pointerType !== 'mouse') return;
@@ -99,12 +96,17 @@
 					aria-label="Site"
 					transition:slide={{ duration: menuDuration, easing: cubicOut }}
 				>
-					{#each links as link (link.href)}
+					{#each internalLinks as link (link.href)}
 						<a
-							href={link.label.includes('snd') ? link.href : resolve(link.href)}
+							href={resolve(link.href)}
 							aria-current={page.url.pathname === link.href ? 'page' : undefined}
 							onclick={() => (menuOpen = false)}>{link.label}</a
 						>
+					{/each}
+					{#each externalLinks as link (link.href)}
+						<!-- External site; resolve() only accepts app routes. -->
+						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+						<a href={link.href} onclick={() => (menuOpen = false)}>{link.label}</a>
 					{/each}
 				</nav>
 			{/if}
@@ -197,7 +199,9 @@
 	.menu-btn.open {
 		gap: 0;
 		padding-left: var(--pad); /* match the right padding once the icon is gone */
-		margin-right: calc(var(--mark) + var(--gap) - var(--pad)); /* keeps total width fixed so the logo and hover area don't move */
+		margin-right: calc(
+			var(--mark) + var(--gap) - var(--pad)
+		); /* keeps total width fixed so the logo and hover area don't move */
 		background-color: var(--color-ink);
 		color: var(--color-bg);
 	}
@@ -212,7 +216,9 @@
 		align-items: center;
 		gap: 0;
 		padding: var(--pad-y) 0;
-		margin-left: calc(var(--heart) + var(--gap) + 2 * var(--pad)); /* room for the heart, held so the logo stays put */
+		margin-left: calc(
+			var(--heart) + var(--gap) + 2 * var(--pad)
+		); /* room for the heart, held so the logo stays put */
 		line-height: 1;
 		color: var(--color-ink);
 		background-color: transparent;
