@@ -34,9 +34,11 @@ if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
 	throw new Error(`Refusing to add an unrecognized loader address: ${ip}`);
 }
 
+console.log(`Allowing ${ip} to load the catalog`);
 const ruleUuid = appendFirewall(cluster.id, `ip_addr:${ip}`);
 try {
 	const uri = await connectionUri(cluster.id);
+	await waitForPostgres(cluster.id);
 	const loaded = loadContestFiles(uri);
 	console.log(loaded ? 'Contest rows loaded' : 'No Award Force files found; schema applied only');
 } finally {
@@ -268,6 +270,38 @@ async function ensureAppFirewall(databaseId: string, appId: string) {
 		}
 		await new Promise((resolve) => setTimeout(resolve, 10000));
 	}
+}
+
+async function waitForPostgres(databaseId: string) {
+	const text = doctl([
+		'databases',
+		'connection',
+		databaseId,
+		'--format',
+		'Host,Port',
+		'--no-header'
+	]).trim();
+	const [host, portText] = text.split(/\s+/);
+	const port = Number(portText);
+	if (!host || !port) throw new Error('Database host was not available');
+	const net = await import('node:net');
+	for (let attempt = 1; attempt <= 12; attempt += 1) {
+		const open = await new Promise<boolean>((resolve) => {
+			const socket = net.connect({ host, port, timeout: 5000 }, () => {
+				socket.end();
+				resolve(true);
+			});
+			socket.on('error', () => resolve(false));
+			socket.on('timeout', () => {
+				socket.destroy();
+				resolve(false);
+			});
+		});
+		if (open) return;
+		console.log(`Waiting for Postgres to accept this machine (${attempt}/12)`);
+		await new Promise((resolve) => setTimeout(resolve, 10000));
+	}
+	throw new Error('Postgres did not accept connections from this machine');
 }
 
 async function connectionUri(databaseId: string): Promise<string> {

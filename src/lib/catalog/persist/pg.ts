@@ -43,6 +43,8 @@ export function poolOptions(connectionString: string): {
 		connectionString
 	);
 	if (!needsSsl) return { connectionString };
-	// DigitalOcean's certificate is not in Node's default trust store.
-	return { connectionString, ssl: { rejectUnauthorized: false } };
+	// Current `pg` treats require as verify-full, and DigitalOcean's certificate
+	// is not in Node's default trust store. Drop sslmode and skip verification.
+	const stripped = connectionString.replace(/([?&])sslmode=[^&]*&?/, '$1').replace(/[?&]$/, '');
+	return { connectionString: stripped, ssl: { rejectUnauthorized: false } };
 }
