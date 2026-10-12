@@ -59,7 +59,7 @@ CATALOG_URL=postgres://user:pass@host:5432/snd
 DIGITALOCEAN_ACCESS_TOKEN=... npx tsx scripts/provision-digitalocean.ts
 ```
 
-The script creates the cluster and the app in the DigitalOcean project named **baseball**. It will not put them in **Over slot**. Award Force workbooks stay off the image. When those files are on the machine running the script, it loads them through a temporary firewall rule and then removes that rule. After the catalog branch is merged, change the spec's `branch` to `main`.
+The script creates the cluster and the app in the DigitalOcean project named **baseball**. It will not put them in **Over slot**. Award Force workbooks stay off the image. When those files are on the machine running the script, it loads them through a temporary firewall rule and then removes that rule. After this branch is merged, change the spec's `branch` to `main`.
 
 `npm run catalog:fit` reads Award Force workbooks, the expiring file-download CSV, and Airtable JSON dumps and reports how those rows sit on the catalog model. It does not write a database. Entrant emails, phone numbers, addresses, and paywall passwords are dropped before anything is stored. Download URLs from Award Force expire after about 48 hours, so they are stored as locators rather than as permanent thumbnails.
 

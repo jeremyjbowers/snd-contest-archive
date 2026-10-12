@@ -24,7 +24,7 @@ services:
   - name: web
     github:
       repo: jeremyjbowers/snd-contest-archive
-      branch: cursor/catalog-loaders-76e2
+      branch: cursor/digitalocean-app-76e2
       deploy_on_push: true
     environment_slug: node-js
     build_command: npm install --include=dev && npm run build
@@ -48,7 +48,7 @@ jobs:
     kind: PRE_DEPLOY
     github:
       repo: jeremyjbowers/snd-contest-archive
-      branch: cursor/catalog-loaders-76e2
+      branch: cursor/digitalocean-app-76e2
       deploy_on_push: true
     environment_slug: node-js
     build_command: npm install --include=dev
