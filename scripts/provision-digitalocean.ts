@@ -347,8 +347,8 @@ async function connectionUri(databaseId: string): Promise<string> {
 	// The database API no longer returns the password after create. Resetting doadmin
 	// is the supported way to read it, and nothing else is using this cluster yet.
 	const reset = await digitalOcean<{ user?: { name?: string; password?: string } }>(
-		`/v2/databases/${databaseId}/users/doadmin/reset`,
-		{ method: 'POST' }
+		`/v2/databases/${databaseId}/users/doadmin/reset_auth`,
+		{ method: 'POST', body: '{}' }
 	);
 	const name = reset.user?.name || 'doadmin';
 	const password = reset.user?.password;
