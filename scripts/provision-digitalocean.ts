@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Client } from 'pg';
 import { fromAwardForceRows } from '../src/lib/catalog/ingest/award-force.ts';
@@ -19,6 +19,7 @@ import {
 const CLUSTER_NAME = 'snd-archive-pg';
 const APP_NAME = 'snd-archive';
 const SPEC = '.do/app.yaml';
+const CREDENTIAL_FILE = '/tmp/snd-archive-pg.uri';
 
 const token = process.env.DIGITALOCEAN_ACCESS_TOKEN || process.env.DIGITALOCEAN_TOKEN;
 if (!token) {
@@ -40,7 +41,7 @@ assign(project.id, `do:dbaas:${cluster.id}`);
 console.log('Reading contest files');
 const batch = await readContestBatch(contestFiles());
 console.log(`Read ${batch.records.length} contest rows`);
-const uri = await connectionUri(cluster.id);
+const uri = cluster.uri ?? (await connectionUri(cluster.id));
 const rule = await connectForLoad(cluster.id, uri);
 try {
 	const result = await loadCatalog(clientSql(rule.client), batch);
@@ -139,16 +140,22 @@ function asProjects(value: unknown): DigitalOceanProject[] {
 	});
 }
 
-async function ensureCluster(
-	projectId: string
-): Promise<{ id: string; name: string; status: string }> {
+async function ensureCluster(projectId: string): Promise<{
+	id: string;
+	name: string;
+	status: string;
+	uri?: string;
+}> {
 	const found = listedClusters().find((cluster) => cluster.name === CLUSTER_NAME);
 	const cluster = found ?? (await createCluster(projectId));
 	assign(projectId, `do:dbaas:${cluster.id}`);
-	return waitUntilOnline(cluster.id);
+	const online = await waitUntilOnline(cluster.id);
+	const uri = cluster.uri ?? rememberedUri();
+	if (uri) rememberUri(uri);
+	return { ...online, uri };
 }
 
-function listedClusters(): { id: string; name: string; status: string }[] {
+function listedClusters(): { id: string; name: string; status: string; uri?: string }[] {
 	const value = json(doctl(['databases', 'list', '-o', 'json']));
 	if (!Array.isArray(value)) throw new Error('Database list was not an array');
 	return value.map((row) => {
@@ -161,9 +168,12 @@ function listedClusters(): { id: string; name: string; status: string }[] {
 	});
 }
 
-async function createCluster(
-	projectId: string
-): Promise<{ id: string; name: string; status: string }> {
+async function createCluster(projectId: string): Promise<{
+	id: string;
+	name: string;
+	status: string;
+	uri?: string;
+}> {
 	const body = {
 		name: CLUSTER_NAME,
 		engine: 'pg',
@@ -191,7 +201,7 @@ async function postDatabase(body: {
 	size: string;
 	num_nodes: number;
 	project_id?: string;
-}): Promise<{ id: string; name: string; status: string } | undefined> {
+}): Promise<{ id: string; name: string; status: string; uri?: string } | undefined> {
 	const payload = { ...body };
 	if (!payload.project_id) delete payload.project_id;
 	const response = await fetch('https://api.digitalocean.com/v2/databases', {
@@ -210,11 +220,43 @@ async function postDatabase(body: {
 	const parsed = json(text) as { database?: Record<string, unknown> };
 	const database = parsed.database;
 	if (!database) throw new Error('Database create response had no database');
+	const uri = connectionFromDatabase(database);
+	if (uri) rememberUri(uri);
 	return {
 		id: stringField(database, 'id'),
 		name: stringField(database, 'name'),
-		status: stringField(database, 'status')
+		status: stringField(database, 'status'),
+		uri
 	};
+}
+
+function connectionFromDatabase(database: Record<string, unknown>): string | undefined {
+	const connection = recordOf(database.connection);
+	const existing = stringField(connection, 'uri');
+	if (existing.startsWith('postgres') && !existing.includes('://:') && !existing.includes('://@')) {
+		return existing;
+	}
+	const user = stringField(connection, 'user');
+	const password = stringField(connection, 'password');
+	const host = stringField(connection, 'host');
+	const port = typeof connection.port === 'number' ? connection.port : Number(connection.port);
+	const name = stringField(connection, 'database') || 'defaultdb';
+	if (!user || !password || !host || !port) return undefined;
+	const auth = `${encodeURIComponent(user)}:${encodeURIComponent(password)}`;
+	return `postgresql://${auth}@${host}:${port}/${name}?sslmode=require`;
+}
+
+function rememberedUri(): string | undefined {
+	try {
+		const uri = readFileSync(CREDENTIAL_FILE, 'utf8').trim();
+		return uri.startsWith('postgres') && !uri.includes('://:') ? uri : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function rememberUri(uri: string) {
+	writeFileSync(CREDENTIAL_FILE, uri, { mode: 0o600 });
 }
 
 async function waitUntilOnline(id: string): Promise<{ id: string; name: string; status: string }> {
