@@ -341,17 +341,37 @@ async function readContestBatch(files: { xlsx: string[]; csv: string[] }): Promi
 }
 
 async function connectionUri(databaseId: string): Promise<string> {
-	for (let attempt = 1; attempt <= 8; attempt += 1) {
-		const text = doctl(['databases', 'connection', databaseId, '--format', 'URI', '--no-header']);
-		const uri = text
-			.split('\n')
-			.map((line) => line.trim())
-			.find((line) => line.startsWith('postgres'));
-		if (uri) return uri;
-		console.log(`Waiting for a database connection string (${attempt}/8)`);
-		await new Promise((resolve) => setTimeout(resolve, 5000));
+	const database = await digitalOcean<{
+		database: { connection: { host: string; port: number; database: string } };
+	}>(`/v2/databases/${databaseId}`);
+	// The database API no longer returns the password after create. Resetting doadmin
+	// is the supported way to read it, and nothing else is using this cluster yet.
+	const reset = await digitalOcean<{ user?: { name?: string; password?: string } }>(
+		`/v2/databases/${databaseId}/users/doadmin/reset`,
+		{ method: 'POST' }
+	);
+	const name = reset.user?.name || 'doadmin';
+	const password = reset.user?.password;
+	if (!password) throw new Error('DigitalOcean did not return a database password');
+	const connection = database.database.connection;
+	const auth = `${encodeURIComponent(name)}:${encodeURIComponent(password)}`;
+	return `postgresql://${auth}@${connection.host}:${connection.port}/${connection.database}?sslmode=require`;
+}
+
+async function digitalOcean<T>(path: string, init: RequestInit = {}): Promise<T> {
+	const response = await fetch(`https://api.digitalocean.com${path}`, {
+		...init,
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			...(init.headers ?? {})
+		}
+	});
+	const text = await response.text();
+	if (!response.ok) {
+		throw new Error(redact(`DigitalOcean ${path} failed (${response.status}): ${text}`));
 	}
-	throw new Error('Database connection string was not available');
+	return json(text) as T;
 }
 
 async function deployApp(appId: string) {
