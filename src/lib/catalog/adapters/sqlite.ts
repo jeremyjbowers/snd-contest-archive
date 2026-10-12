@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { buildFacets, filterEntries, toSummary } from '../filter';
+import { entryFromRow } from '../rows';
 import type { Catalog, Credit, Entry, EntryQuery } from '../types';
 
 /**
@@ -52,25 +53,9 @@ function hydrate(db: DatabaseSync, row: Record<string, unknown>): Entry {
 		.prepare(`SELECT name, role FROM credits WHERE entry_id = ? ORDER BY sort_order`)
 		.all(id) as Credit[];
 
-	return {
-		id,
-		title: String(row.title),
-		publication: String(row.publication),
-		year: Number(row.year),
-		award: String(row.award),
-		category: String(row.category),
-		subcategory: row.subcategory ? String(row.subcategory) : null,
-		discipline: String(row.discipline),
-		platform: String(row.platform),
-		topic: row.topic ? String(row.topic) : null,
-		description: row.description ? String(row.description) : null,
-		url: row.url ? String(row.url) : null,
-		thumbnail: String(row.thumbnail),
-		images: images.length ? images.map((image) => image.url) : [String(row.thumbnail)],
-		credits,
-		student: Boolean(row.student),
-		nonEditorial: Boolean(row.non_editorial),
-		multiWinner: Boolean(row.multi_winner),
-		access: row.access === 'member' ? 'member' : 'public'
-	};
+	return entryFromRow(
+		row,
+		images.map((image) => image.url),
+		credits
+	);
 }

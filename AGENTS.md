@@ -8,15 +8,15 @@ Visual source: **designs**, Round 2. Screen inventory: **wireframes**.
 
 Svelte is the component format (markup, scoped CSS, and `<script>` in one `.svelte` file). SvelteKit is routing, `load` functions, and the `$lib` alias. This app is Svelte 5 **runes** mode (`$props`, `$state`, `$derived`, `$effect`). It is not Sapper, and it is not the 2018 compiler.
 
-| Svelte 2 / 3 | This repo |
-| --- | --- |
-| `export let name` | `let { name }: { name: string } = $props()` |
-| implicit `let` reactivity | `let count = $state(0)` |
-| `$: doubled = count * 2` | `const doubled = $derived(count * 2)` |
-| `$: { ... }` | `$effect(() => { ... })` — rare; prefer derived values |
-| `writable` stores for shared UI state | module-level `$state` in a `.svelte.ts` file |
-| Sapper `_layout.svelte` | `+layout.svelte` / `+page.svelte` |
-| `onMount` | still valid; data usually comes from `load` |
+| Svelte 2 / 3                          | This repo                                              |
+| ------------------------------------- | ------------------------------------------------------ |
+| `export let name`                     | `let { name }: { name: string } = $props()`            |
+| implicit `let` reactivity             | `let count = $state(0)`                                |
+| `$: doubled = count * 2`              | `const doubled = $derived(count * 2)`                  |
+| `$: { ... }`                          | `$effect(() => { ... })` — rare; prefer derived values |
+| `writable` stores for shared UI state | module-level `$state` in a `.svelte.ts` file           |
+| Sapper `_layout.svelte`               | `+layout.svelte` / `+page.svelte`                      |
+| `onMount`                             | still valid; data usually comes from `load`            |
 
 HMR picks up saves in `.svelte` and `.css`. Typecheck with `npm run check`.
 
@@ -63,12 +63,12 @@ static/assets/              logo, icons, mock images
 
 ## Visual system
 
-| What | Where |
-| --- | --- |
-| Color, type, gutters | `src/lib/styles/tokens.css` |
-| A component | `src/lib/components` |
-| A page | `src/routes/.../+page.svelte` |
-| Fonts | `@font-face` in `tokens.css`; files in `static/fonts` |
+| What                 | Where                                                 |
+| -------------------- | ----------------------------------------------------- |
+| Color, type, gutters | `src/lib/styles/tokens.css`                           |
+| A component          | `src/lib/components`                                  |
+| A page               | `src/routes/.../+page.svelte`                         |
+| Fonts                | `@font-face` in `tokens.css`; files in `static/fonts` |
 
 Intended type is Antenna Serif + Antenna 2 VF. Until those files are in the repo, Fraunces and Source Sans 3 are the fallbacks.
 
@@ -104,7 +104,8 @@ npm run format   # Prettier (tabs, single quotes)
 - Production entry data and crops
 - Member lock / paywall (wireframe “archive locked view”)
 - Pagination vs infinite scroll (both labeled in Round 1)
-- Postgres, auth
+- Auth
+- Durable entry images (Award Force download URLs expire; the loader stores the locators)
 - About / membership / competition copy
 
 Extend the catalog interface and existing components rather than a parallel app.

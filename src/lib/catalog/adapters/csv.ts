@@ -37,10 +37,19 @@ function rowToEntry(row: Record<string, string>): Entry {
 		platform: row.platform,
 		topic: row.topic || null,
 		description: row.description || null,
+		citation: row.citation || null,
 		url: row.url || null,
 		thumbnail: row.thumbnail || images[0] || '',
 		images,
 		credits: parseCredits(row.credits),
+		awards: row.awards
+			? row.awards
+					.split('|')
+					.map((award) => award.trim())
+					.filter(Boolean)
+			: row.award
+				? [row.award]
+				: [],
 		student: flag(row.student),
 		nonEditorial: flag(row.non_editorial),
 		multiWinner: flag(row.multi_winner),

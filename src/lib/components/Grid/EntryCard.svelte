@@ -13,7 +13,9 @@
 
 <article class="card">
 	<a class="media" {href}>
-		<img src={entry.thumbnail} alt={entry.title} width="328" height="271" />
+		{#if entry.thumbnail}
+			<img src={entry.thumbnail} alt={entry.title} width="328" height="271" />
+		{/if}
 	</a>
 	<button
 		class="heart"
