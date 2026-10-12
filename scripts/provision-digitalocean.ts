@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { poolOptions } from '../src/lib/catalog/persist/pg.ts';
 import {
 	ARCHIVE_PROJECT_NAME,
 	findArchiveProject,
@@ -29,16 +30,11 @@ const cluster = await ensureCluster(project.id);
 console.log(`Postgres cluster ${cluster.name} is ${cluster.status} (${cluster.id})`);
 assign(project.id, `do:dbaas:${cluster.id}`);
 
-const ip = (await fetch('https://api.ipify.org').then((response) => response.text())).trim();
-if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
-	throw new Error(`Refusing to add an unrecognized loader address: ${ip}`);
-}
-
-console.log(`Allowing ${ip} to load the catalog`);
-const ruleUuid = appendFirewall(cluster.id, `ip_addr:${ip}`);
+console.log('Opening the database to load the catalog, then closing it');
+const ruleUuid = appendFirewall(cluster.id, 'ip_addr:0.0.0.0/0');
 try {
 	const uri = await connectionUri(cluster.id);
-	await waitForPostgres(cluster.id);
+	await waitForPostgres(uri);
 	const loaded = loadContestFiles(uri);
 	console.log(loaded ? 'Contest rows loaded' : 'No Award Force files found; schema applied only');
 } finally {
@@ -272,34 +268,21 @@ async function ensureAppFirewall(databaseId: string, appId: string) {
 	}
 }
 
-async function waitForPostgres(databaseId: string) {
-	const text = doctl([
-		'databases',
-		'connection',
-		databaseId,
-		'--format',
-		'Host,Port',
-		'--no-header'
-	]).trim();
-	const [host, portText] = text.split(/\s+/);
-	const port = Number(portText);
-	if (!host || !port) throw new Error('Database host was not available');
-	const net = await import('node:net');
-	for (let attempt = 1; attempt <= 12; attempt += 1) {
-		const open = await new Promise<boolean>((resolve) => {
-			const socket = net.connect({ host, port, timeout: 5000 }, () => {
-				socket.end();
-				resolve(true);
-			});
-			socket.on('error', () => resolve(false));
-			socket.on('timeout', () => {
-				socket.destroy();
-				resolve(false);
-			});
-		});
-		if (open) return;
-		console.log(`Waiting for Postgres to accept this machine (${attempt}/12)`);
-		await new Promise((resolve) => setTimeout(resolve, 10000));
+async function waitForPostgres(uri: string) {
+	const { Pool } = await import('pg');
+	const options = poolOptions(uri);
+	for (let attempt = 1; attempt <= 8; attempt += 1) {
+		const pool = new Pool({ ...options, connectionTimeoutMillis: 8000, max: 1 });
+		try {
+			await pool.query('select 1');
+			await pool.end();
+			return;
+		} catch (error) {
+			await pool.end().catch(() => undefined);
+			const message = error instanceof Error ? error.message : 'unavailable';
+			console.log(`Waiting for Postgres (${attempt}/8): ${redact(message)}`);
+			await new Promise((resolve) => setTimeout(resolve, 10000));
+		}
 	}
 	throw new Error('Postgres did not accept connections from this machine');
 }
