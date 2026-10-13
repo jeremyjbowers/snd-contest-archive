@@ -40,7 +40,6 @@ console.log(
 	`Read ${records.length} results rows, ${loaded.assets.length} assets, from ${options.dumps.length} dumps`
 );
 const mirrored = await mirrorPreviews(loaded.assets, options.cache);
-console.log(`Mirrored ${mirrored.media.length} previews`);
 if (options.mirrorOnly) process.exit(0);
 if (!database) throw new Error('Pass --database postgres://...');
 const result = await loadCatalog(pgSql(database), {
