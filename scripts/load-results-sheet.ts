@@ -63,26 +63,38 @@ console.log(
 
 async function insertCachedMedia(database: string, assets: SourceAsset[], cacheDir: string) {
 	const sql = pgSql(database);
-	const images = assets.filter(isDurableImage);
+	const present = new Set(
+		(await sql.query<{ id: string }>('SELECT id FROM entries')).map((row) => row.id)
+	);
+	const images = assets.filter((asset) => isDurableImage(asset) && present.has(asset.sourceKey));
 	let stored = 0;
+	let skipped = 0;
 	for (const asset of images) {
 		const match = asset.locator.match(/\/media\/([^/]+)\/(\d+)$/);
 		if (!match) continue;
 		const sourceKey = decodeURIComponent(match[1]);
 		const sortOrder = Number(match[2]);
+		const existing = await sql.query(
+			'SELECT 1 AS ok FROM entry_media WHERE entry_id = $1 AND sort_order = $2',
+			[sourceKey, sortOrder]
+		);
+		if (existing.length) {
+			skipped += 1;
+			continue;
+		}
 		const bytes = new Uint8Array(readFileSync(resolve(cacheDir, `${sourceKey}-${sortOrder}`)));
 		await sql.query(
 			`INSERT INTO entry_media (entry_id, sort_order, media_type, bytes)
 			 VALUES ($1, $2, $3, $4)
-			 ON CONFLICT (entry_id, sort_order) DO UPDATE SET
-			   media_type = EXCLUDED.media_type,
-			   bytes = EXCLUDED.bytes`,
+			 ON CONFLICT (entry_id, sort_order) DO NOTHING`,
 			[sourceKey, sortOrder, asset.mediaType, bytes]
 		);
 		stored += 1;
-		if (stored % 200 === 0) console.log(`stored ${stored}/${images.length}`);
+		if ((stored + skipped) % 200 === 0) {
+			console.log(`stored ${stored}, already there ${skipped}, of ${images.length}`);
+		}
 	}
-	console.log(`stored ${stored} previews in Postgres`);
+	console.log(`stored ${stored} previews, skipped ${skipped} already stored`);
 }
 
 function readDumps(files: string[]) {
