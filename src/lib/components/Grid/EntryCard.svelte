@@ -19,6 +19,8 @@
 				alt={entry.title}
 				width="328"
 				height="271"
+				loading="lazy"
+				decoding="async"
 				onerror={(event) => {
 					if (event.currentTarget instanceof HTMLImageElement) event.currentTarget.hidden = true;
 				}}
