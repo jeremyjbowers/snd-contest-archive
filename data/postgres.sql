@@ -32,6 +32,16 @@ CREATE TABLE IF NOT EXISTS entry_images (
 	sort_order INTEGER NOT NULL DEFAULT 0
 );
 
+-- Preview bytes for a card and the detail gallery. Airtable attachment URLs expire,
+-- so the loader stores the thumbnail itself and the site serves /media/{id}/{index}.
+CREATE TABLE IF NOT EXISTS entry_media (
+	entry_id TEXT NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
+	sort_order INTEGER NOT NULL,
+	media_type TEXT NOT NULL,
+	bytes BYTEA NOT NULL,
+	PRIMARY KEY (entry_id, sort_order)
+);
+
 CREATE TABLE IF NOT EXISTS credits (
 	entry_id TEXT NOT NULL REFERENCES entries(id),
 	name TEXT NOT NULL,

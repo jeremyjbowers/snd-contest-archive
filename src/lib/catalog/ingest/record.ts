@@ -1,6 +1,7 @@
 import type { Credit, Entry } from '../types';
 import { primaryAward } from './awards';
 import type { ClassifiedCategory } from './categories';
+import { isDurableImage } from './images';
 
 export type SubmissionSource = 'award-force' | 'airtable';
 
@@ -55,9 +56,9 @@ export type SubmissionRecord = {
 
 const DURABLE_IMAGE = /\.(png|jpe?g|gif|webp)(\?|$)/i;
 
-export function toEntry(record: SubmissionRecord): Entry | null {
+export function toEntry(record: SubmissionRecord, assets: SourceAsset[] = []): Entry | null {
 	if (record.blockReason || record.year == null) return null;
-	const images = durableImages(record);
+	const images = durableImages(record, assets);
 	return {
 		id: record.sourceKey,
 		title: record.title,
@@ -83,7 +84,12 @@ export function toEntry(record: SubmissionRecord): Entry | null {
 	};
 }
 
-function durableImages(record: SubmissionRecord): string[] {
+function durableImages(record: SubmissionRecord, assets: SourceAsset[]): string[] {
+	const stored = assets
+		.filter((asset) => asset.sourceKey === record.sourceKey && isDurableImage(asset))
+		.sort((left, right) => left.sortOrder - right.sortOrder)
+		.map((asset) => asset.locator);
+	if (stored.length) return stored;
 	if (!record.url || !DURABLE_IMAGE.test(record.url)) return [];
 	return [record.url];
 }

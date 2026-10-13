@@ -102,7 +102,13 @@
 
 	<section class="gallery" aria-label={entry.title}>
 		{#each entry.images as image, index (image + index)}
-			<img src={image} alt="{entry.title}, image {index + 1}" />
+			<img
+				src={image}
+				alt="{entry.title}, image {index + 1}"
+				onerror={(event) => {
+					if (event.currentTarget instanceof HTMLImageElement) event.currentTarget.hidden = true;
+				}}
+			/>
 		{/each}
 	</section>
 </article>

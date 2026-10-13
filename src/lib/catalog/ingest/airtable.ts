@@ -9,6 +9,7 @@ import {
 	type SourceAsset,
 	type SubmissionRecord
 } from './record';
+import { attachmentPreviews, isWorkAttachmentField } from './images';
 import { asText, asUrl, column, isBlank } from './text';
 
 export type AirtableDump = {
@@ -83,7 +84,7 @@ function fromAirtableRecord(
 		platform: column(fields, 'Platform', 'Platform - all'),
 		platformDefault
 	});
-	const links = linkAssets(fields);
+	const links = [...linkAssets(fields), ...workPreviews(fields)];
 	const sourceKey = entryId ? awardForceKey(entryId) : `at-${record.id}`;
 	const assets = links.map((asset, index) => ({ ...asset, sourceKey, origin, sortOrder: index }));
 	const citation = textOrNull(column(fields, 'Medal Notes', 'Judges Comments', 'Citation'));
@@ -147,6 +148,27 @@ function creditsFrom(fields: Record<string, unknown>) {
 	const last = asText(column(fields, 'Last Name', 'Last Name1'));
 	const name = [first, last].filter(Boolean).join(' ');
 	return name ? [{ name, role: '' }] : [];
+}
+
+function workPreviews(
+	fields: Record<string, unknown>
+): Omit<SourceAsset, 'sourceKey' | 'origin' | 'sortOrder'>[] {
+	const assets: Omit<SourceAsset, 'sourceKey' | 'origin' | 'sortOrder'>[] = [];
+	for (const [key, value] of Object.entries(fields)) {
+		if (!isWorkAttachmentField(key)) continue;
+		for (const preview of attachmentPreviews(value)) {
+			assets.push({
+				kind: 'expiring-download',
+				label: 'Attachment',
+				filename: preview.filename,
+				mediaType: preview.mediaType,
+				byteSize: null,
+				locator: preview.locator,
+				expiresHours: 2
+			});
+		}
+	}
+	return assets;
 }
 
 function linkAssets(
