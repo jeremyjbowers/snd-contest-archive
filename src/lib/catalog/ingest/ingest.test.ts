@@ -6,6 +6,7 @@ import { createSqlCatalog } from '../adapters/sql-catalog';
 import { loadCatalog } from '../persist/load';
 import type { Sql } from '../persist/sql';
 import { fromAirtableDump } from './airtable';
+import { asStoredImage, mediaBytes } from './images';
 import { tableDecision, yearFromContest } from './airtable-tables';
 import { fromAwardForceRows } from './award-force';
 import { parseAwards } from './awards';
@@ -180,6 +181,102 @@ test('airtable results carry multiple awards and skip roster tables', () => {
 	assert.equal(roster.records.length, 0);
 	assert.match(roster.skipped ?? '', /contact/i);
 	assert.equal(JSON.stringify(roster).includes(SECRET_EMAIL), false);
+});
+
+test('airtable work attachments become previews and social cards stay out', async () => {
+	const dumped = fromAirtableDump({
+		baseName: 'SND Results',
+		tableName: 'SND46 Results',
+		records: [
+			{
+				id: 'rec0123456789abcd',
+				fields: {
+					Entry: 'City desk',
+					'Entry ID': 24337,
+					Publication: 'The Daily',
+					Award: 'Gold',
+					Attachment: [
+						{
+							url: 'https://v5.airtableusercontent.com/file.pdf',
+							filename: 'file.pdf',
+							type: 'application/pdf',
+							thumbnails: {
+								large: {
+									url: 'https://v5.airtableusercontent.com/thumb.jpg',
+									width: 512,
+									height: 700
+								}
+							}
+						},
+						{
+							url: 'https://v5.airtableusercontent.com/page.png',
+							filename: 'page.png',
+							type: 'image/png',
+							thumbnails: {
+								large: { url: 'https://v5.airtableusercontent.com/large.jpg' },
+								full: { url: 'https://v5.airtableusercontent.com/full.jpg' }
+							}
+						}
+					],
+					'Social Cards': [
+						{
+							url: 'https://v5.airtableusercontent.com/card.png',
+							filename: 'card.png',
+							type: 'image/png',
+							thumbnails: { large: { url: 'https://v5.airtableusercontent.com/social.jpg' } }
+						}
+					]
+				}
+			}
+		]
+	});
+	assert.equal(dumped.assets.length, 2);
+	assert.equal(dumped.assets[0]?.locator, 'https://v5.airtableusercontent.com/thumb.jpg');
+	assert.equal(dumped.assets[1]?.locator, 'https://v5.airtableusercontent.com/full.jpg');
+	assert.equal(
+		dumped.assets.every((asset) => asset.kind === 'expiring-download'),
+		true
+	);
+	assert.equal(toEntry(dumped.records[0]!)?.thumbnail, '');
+
+	const stored = dumped.assets.map((asset) => asStoredImage(asset, { mediaType: 'image/jpeg' }));
+	const entry = toEntry(dumped.records[0]!, stored);
+	assert.deepEqual(entry?.images, ['/media/af-24337/0', '/media/af-24337/1']);
+
+	const db = new PGlite();
+	const sql = pgliteSql(db);
+	const schema = readFileSync(new URL('../../../../data/postgres.sql', import.meta.url), 'utf8');
+	const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+	await loadCatalog(
+		sql,
+		{
+			records: dumped.records,
+			assets: stored,
+			media: stored.map((asset) => ({
+				sourceKey: asset.sourceKey,
+				sortOrder: asset.sortOrder,
+				mediaType: 'image/jpeg',
+				bytes: jpeg
+			}))
+		},
+		schema
+	);
+	assert.equal((await createSqlCatalog(sql).getEntry('af-24337'))?.thumbnail, '/media/af-24337/0');
+	const rows = await sql.query<{ bytes: unknown; media_type: string }>(
+		'SELECT bytes, media_type FROM entry_media WHERE entry_id = $1 ORDER BY sort_order',
+		['af-24337']
+	);
+	assert.equal(rows.length, 2);
+	assert.equal(rows[0]?.media_type, 'image/jpeg');
+	assert.deepEqual(mediaBytes(rows[0]?.bytes), jpeg);
+
+	await loadCatalog(sql, { records: dumped.records, assets: dumped.assets }, schema);
+	assert.equal((await createSqlCatalog(sql).getEntry('af-24337'))?.thumbnail, '/media/af-24337/0');
+	const kept = await sql.query<{ media_type: string }>(
+		'SELECT media_type FROM entry_media WHERE entry_id = $1',
+		['af-24337']
+	);
+	assert.equal(kept.length, 2);
 });
 
 test('older print and digital tables map onto the same record', () => {

@@ -12,20 +12,28 @@ import { applySchema, type Sql } from './sql';
 
 const SCHEMA_PATH = resolve(process.cwd(), 'data/postgres.sql');
 
+export type StoredMedia = {
+	sourceKey: string;
+	sortOrder: number;
+	mediaType: string;
+	bytes: Uint8Array;
+};
+
 export async function loadCatalog(
 	sql: Sql,
-	batch: { records: SubmissionRecord[]; assets: SourceAsset[] },
+	batch: { records: SubmissionRecord[]; assets: SourceAsset[]; media?: StoredMedia[] },
 	schema = readFileSync(SCHEMA_PATH, 'utf8')
 ) {
 	await applySchema(sql, schema);
 	const merged = await mergeWithStored(sql, combineRecords(batch.records));
 	const origins = [...new Set(batch.assets.map((asset) => asset.origin))];
+	const assetsByKey = groupAssets(batch.assets);
 
 	await sql.exec('BEGIN');
 	try {
 		for (const record of merged) {
 			await upsertSubmission(sql, record);
-			const entry = toEntry(record);
+			const entry = toEntry(record, assetsByKey.get(record.sourceKey) ?? []);
 			if (entry) await upsertEntry(sql, entry, record);
 			else await deleteEntry(sql, record.sourceKey);
 		}
@@ -56,6 +64,14 @@ export async function loadCatalog(
 		await sql.exec('ROLLBACK');
 		throw error;
 	}
+
+	const promoted = new Set(
+		merged.filter((record) => !record.blockReason).map((record) => record.sourceKey)
+	);
+	await writeMedia(
+		sql,
+		(batch.media ?? []).filter((item) => promoted.has(item.sourceKey))
+	);
 
 	return {
 		submissions: merged.length,
@@ -138,7 +154,7 @@ async function upsertEntry(sql: Sql, entry: Entry, record: SubmissionRecord) {
 			topic = EXCLUDED.topic,
 			description = EXCLUDED.description,
 			url = EXCLUDED.url,
-			thumbnail = EXCLUDED.thumbnail,
+			thumbnail = CASE WHEN EXCLUDED.thumbnail = '' THEN entries.thumbnail ELSE EXCLUDED.thumbnail END,
 			student = EXCLUDED.student,
 			non_editorial = EXCLUDED.non_editorial,
 			multi_winner = EXCLUDED.multi_winner,
@@ -171,14 +187,19 @@ async function upsertEntry(sql: Sql, entry: Entry, record: SubmissionRecord) {
 			record.sourceKey
 		]
 	);
-	await sql.query('DELETE FROM entry_images WHERE entry_id = $1', [entry.id]);
 	await sql.query('DELETE FROM credits WHERE entry_id = $1', [entry.id]);
-	for (const [index, url] of entry.images.entries()) {
-		await sql.query('INSERT INTO entry_images (entry_id, url, sort_order) VALUES ($1, $2, $3)', [
-			entry.id,
-			url,
-			index
-		]);
+	// A later load that has no pictures (Award Force rows, for example) must not
+	// wipe previews already stored from the results sheet.
+	if (entry.images.length) {
+		await sql.query('DELETE FROM entry_images WHERE entry_id = $1', [entry.id]);
+		await sql.query('DELETE FROM entry_media WHERE entry_id = $1', [entry.id]);
+		for (const [index, url] of entry.images.entries()) {
+			await sql.query('INSERT INTO entry_images (entry_id, url, sort_order) VALUES ($1, $2, $3)', [
+				entry.id,
+				url,
+				index
+			]);
+		}
 	}
 	for (const [index, credit] of entry.credits.entries()) {
 		await sql.query(
@@ -190,8 +211,29 @@ async function upsertEntry(sql: Sql, entry: Entry, record: SubmissionRecord) {
 
 async function deleteEntry(sql: Sql, id: string) {
 	await sql.query('DELETE FROM entry_images WHERE entry_id = $1', [id]);
+	await sql.query('DELETE FROM entry_media WHERE entry_id = $1', [id]);
 	await sql.query('DELETE FROM credits WHERE entry_id = $1', [id]);
 	await sql.query('DELETE FROM entries WHERE id = $1', [id]);
+}
+
+async function writeMedia(sql: Sql, media: StoredMedia[]) {
+	for (const item of media) {
+		await sql.query(
+			`INSERT INTO entry_media (entry_id, sort_order, media_type, bytes)
+			 VALUES ($1, $2, $3, $4)`,
+			[item.sourceKey, item.sortOrder, item.mediaType, item.bytes]
+		);
+	}
+}
+
+function groupAssets(assets: SourceAsset[]) {
+	const grouped = new Map<string, SourceAsset[]>();
+	for (const asset of assets) {
+		const list = grouped.get(asset.sourceKey) ?? [];
+		list.push(asset);
+		grouped.set(asset.sourceKey, list);
+	}
+	return grouped;
 }
 
 function chunks<T>(values: T[], size: number) {

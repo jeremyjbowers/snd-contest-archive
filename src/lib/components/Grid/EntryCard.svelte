@@ -14,7 +14,15 @@
 <article class="card">
 	<a class="media" {href}>
 		{#if entry.thumbnail}
-			<img src={entry.thumbnail} alt={entry.title} width="328" height="271" />
+			<img
+				src={entry.thumbnail}
+				alt={entry.title}
+				width="328"
+				height="271"
+				onerror={(event) => {
+					if (event.currentTarget instanceof HTMLImageElement) event.currentTarget.hidden = true;
+				}}
+			/>
 		{/if}
 	</a>
 	<button

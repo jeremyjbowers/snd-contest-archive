@@ -106,7 +106,7 @@ npm run catalog:migrate # apply data/postgres.sql
 - Member lock / paywall (wireframe “archive locked view”)
 - Pagination vs infinite scroll (both labeled in Round 1)
 - Auth
-- Durable entry images (Award Force download URLs expire; the loader stores the locators)
+- Award Force file URLs still expire. Entry pictures are Airtable attachment previews stored in Postgres and served at `/media/{id}/{index}`.
 - About / membership / competition copy
 
 Extend the catalog interface and existing components rather than a parallel app.

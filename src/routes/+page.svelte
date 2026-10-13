@@ -23,9 +23,7 @@
 	<section class="grid" aria-label="Archive entries">
 		<EntryGrid entries={data.entries} />
 		{#if !data.entries.length}
-			<p class="empty">
-				No entries match those filters yet. This grid is still running on mock data.
-			</p>
+			<p class="empty">No entries match those filters.</p>
 		{/if}
 	</section>
 </main>

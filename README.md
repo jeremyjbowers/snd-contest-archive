@@ -63,7 +63,7 @@ The script creates the cluster and the app in a DigitalOcean project named **SND
 
 The running app is [snd-archive](https://snd-archive-y3yig.ondigitalocean.app).
 
-`npm run catalog:fit` reads Award Force workbooks, the expiring file-download CSV, and Airtable JSON dumps and reports how those rows sit on the catalog model. It does not write a database. Entrant emails, phone numbers, addresses, and paywall passwords are dropped before anything is stored. Download URLs from Award Force expire after about 48 hours, so they are stored as locators rather than as permanent thumbnails.
+`npm run catalog:fit` reads Award Force workbooks, the expiring file-download CSV, and Airtable JSON dumps and reports how those rows sit on the catalog model. It does not write a database. Entrant emails, phone numbers, addresses, and paywall passwords are dropped before anything is stored. Download URLs from Award Force expire after about 48 hours, so they are stored as locators rather than as permanent thumbnails. The pictures on the site come from the Airtable results sheets: each work attachment's preview is saved in Postgres and served at `/media/{id}/{index}`. Social cards and award certificates are not used as the entry image.
 
 ## Type
 
