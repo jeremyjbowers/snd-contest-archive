@@ -105,7 +105,9 @@ function readDumps(files: string[]) {
 		if (!dump.tableName || !Array.isArray(dump.records)) {
 			throw new Error(`${filePath} is not an Airtable dump`);
 		}
-		const mapped = fromAirtableDump(dump);
+		const mapped = fromAirtableDump(dump, {
+			includeOverlaps: dump.tableName === 'Archive'
+		});
 		if (mapped.skipped) console.error(mapped.skipped);
 		records.push(...mapped.records);
 		assets.push(...mapped.assets);

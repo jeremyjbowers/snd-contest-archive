@@ -78,16 +78,22 @@ function fromAirtableRecord(
 			'Category',
 			'Specific Category Name',
 			'Specific Category',
+			'Category Number',
 			'General Category Name'
 		),
 		subcategory: column(fields, 'Subcategory'),
 		platform: column(fields, 'Platform', 'Platform - all'),
 		platformDefault
 	});
-	const links = [...linkAssets(fields), ...workPreviews(fields)];
+	const links = [...linkAssets(fields), ...markdownLinks(fields), ...workPreviews(fields)];
 	const sourceKey = entryId ? awardForceKey(entryId) : `at-${record.id}`;
 	const assets = links.map((asset, index) => ({ ...asset, sourceKey, origin, sortOrder: index }));
 	const citation = textOrNull(column(fields, 'Medal Notes', 'Judges Comments', 'Citation'));
+	const awards = parseAwards(
+		[column(fields, 'Award'), column(fields, 'Tags'), ...worldsBestHonors(fields)]
+			.flat()
+			.filter((value) => value != null)
+	);
 
 	return {
 		assets,
@@ -100,7 +106,7 @@ function fromAirtableRecord(
 			title,
 			publication: publication || company,
 			companyPublication: company || null,
-			awards: parseAwards(column(fields, 'Award')),
+			awards,
 			description: null,
 			citation,
 			url: links.find((link) => link.kind === 'url')?.locator ?? null,
@@ -117,14 +123,39 @@ function fromAirtableRecord(
 
 function airtableTitle(fields: Record<string, unknown>) {
 	const headline = asText(column(fields, 'Headline', 'Name'));
-	if (headline && !isMarkdownLink(headline)) return headline;
+	if (headline && !markdownLink(headline)) return headline;
 	const entry = asText(column(fields, 'Entry'));
-	if (entry && !isMarkdownLink(entry)) return entry;
-	return headline;
+	if (entry && !markdownLink(entry)) return entry;
+	return markdownLink(headline)?.label || markdownLink(entry)?.label || headline;
 }
 
-function isMarkdownLink(value: string) {
-	return /^\[[^\]]+\]\(https?:\/\//.test(value);
+function markdownLink(value: string) {
+	const match = value.match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/);
+	if (!match) return null;
+	return { label: match[1].trim(), url: match[2] };
+}
+
+function markdownLinks(
+	fields: Record<string, unknown>
+): Omit<SourceAsset, 'sourceKey' | 'origin' | 'sortOrder'>[] {
+	const assets: Omit<SourceAsset, 'sourceKey' | 'origin' | 'sortOrder'>[] = [];
+	for (const key of ['Entry', 'Headline', 'Name']) {
+		const linked = markdownLink(asText(column(fields, key)));
+		if (!linked) continue;
+		assets.push(urlAsset(key, linked.url));
+	}
+	return assets;
+}
+
+function worldsBestHonors(fields: Record<string, unknown>): string[] {
+	const honors: string[] = [];
+	for (const [key, value] of Object.entries(fields)) {
+		if (!/world.?s best designed/i.test(key) || /from /i.test(key)) continue;
+		const text = asText(value);
+		if (!text || /^(no|false|n\/a|none)$/i.test(text)) continue;
+		honors.push(/finalist/i.test(text) ? "World's Best Designed Finalist" : "World's Best");
+	}
+	return honors;
 }
 
 function yearFromFields(fields: Record<string, unknown>) {
