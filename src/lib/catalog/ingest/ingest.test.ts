@@ -12,7 +12,7 @@ import { fromAwardForceRows } from './award-force';
 import { parseAwards } from './awards';
 import { fromFilesCsv } from './files';
 import { modelFit } from './model-fit';
-import { combineRecords, toEntry } from './record';
+import { combineRecords, toEntry, uniqueAssets } from './record';
 
 const SECRET_EMAIL = 'secret-entrant@example.com';
 const SECRET_PASSWORD = 'hunter2-do-not-store';
@@ -277,6 +277,45 @@ test('airtable work attachments become previews and social cards stay out', asyn
 		['af-24337']
 	);
 	assert.equal(kept.length, 2);
+});
+
+test('a markdown entry title is the link label, and screenshots count as the work', () => {
+	const dumped = fromAirtableDump({
+		baseName: 'Digital results',
+		tableName: '2021',
+		records: [
+			{
+				id: 'rec0123456789abcd',
+				fields: {
+					Entry: '[Quartz’s newsroom accountability bots](https://qz.com/bots)',
+					Publication: 'Quartz',
+					Award: { name: 'Award of Excellence' },
+					'World’s Best Designed™': { name: 'Winner' },
+					Screenshots: [
+						{
+							url: 'https://v5.airtableusercontent.com/shot.png',
+							filename: 'shot.png',
+							type: 'image/png',
+							thumbnails: { full: { url: 'https://v5.airtableusercontent.com/shot-full.jpg' } }
+						}
+					]
+				}
+			}
+		]
+	});
+	const record = dumped.records[0];
+	assert.equal(record?.title, 'Quartz’s newsroom accountability bots');
+	assert.equal(record?.year, 2021);
+	assert.equal(record?.platform, 'Digital');
+	assert.equal(record?.url, 'https://qz.com/bots');
+	assert.deepEqual(record?.awards, ["World's Best", 'Award of Excellence']);
+	assert.equal(
+		dumped.assets.some((asset) => asset.locator.includes('shot-full')),
+		true
+	);
+	const doubled = uniqueAssets([...dumped.assets, ...dumped.assets]);
+	assert.equal(doubled.length, dumped.assets.length);
+	assert.equal(toEntry(record!)?.thumbnail, '');
 });
 
 test('older print and digital tables map onto the same record', () => {

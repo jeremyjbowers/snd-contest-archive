@@ -14,7 +14,8 @@ const IMAGE_EXT = /\.(png|jpe?g|gif|webp)$/i;
 
 /** Work files live on an attachment field. Social cards and certificates are not the entry. */
 export function isWorkAttachmentField(name: string) {
-	return /^attachments?$/i.test(name.trim());
+	const label = name.trim();
+	return /^attachments?$/i.test(label) || /^screenshots?$/i.test(label);
 }
 
 export function attachmentPreviews(value: unknown): AttachmentPreview[] {
