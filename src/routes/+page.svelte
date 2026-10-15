@@ -47,6 +47,7 @@
 			const params = new SvelteURLSearchParams(window.location.search);
 			params.set('offset', String(offset));
 			params.set('limit', String(CARD_PAGE));
+			if (data.bucket != null) params.set('bucket', String(data.bucket));
 			const response = await fetch(`/api/entries?${params}`);
 			if (!response.ok) throw new Error('Could not load more entries');
 			const body = (await response.json()) as { entries: EntrySummary[] };
