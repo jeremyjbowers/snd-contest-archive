@@ -1,5 +1,6 @@
 import { byArchiveOrder } from './page';
-import type { EntryQuery, EntrySummary } from './types';
+import { emptyQuery } from './filter';
+import type { EntryQuery, EntrySummary, Facets } from './types';
 
 /**
  * How long one homepage draw stays up.
@@ -18,12 +19,53 @@ type ShuffleCache = {
 	bucket: number;
 	fingerprint: string;
 	ordered: EntrySummary[];
+	facets: Facets | null;
 };
+
+let opening: Promise<{ ordered: EntrySummary[]; bucket: number; facets: Facets }> | null = null;
 
 let cache: ShuffleCache | null = null;
 
 export function clearShuffleCache() {
 	cache = null;
+}
+
+/**
+ * The draw for this window, if this process already built it.
+ * Callers can serve the homepage without reading the catalog again.
+ */
+export function cachedOpenBrowse(bucket: number) {
+	if (cache?.bucket !== bucket) return null;
+	return { ordered: cache.ordered, bucket, facets: cache.facets };
+}
+
+/**
+ * Build the open-archive draw once per window, including when several requests
+ * arrive together. Later requests in that window reuse it and skip the catalog.
+ */
+export async function openBrowse(
+	load: () => Promise<{ entries: EntrySummary[]; facets: Facets }>,
+	now = Date.now()
+) {
+	const bucket = shuffleBucket(now);
+	const hit = cachedOpenBrowse(bucket);
+	if (hit?.facets) return { ordered: hit.ordered, bucket, facets: hit.facets };
+	if (!opening) {
+		opening = load()
+			.then((loaded) => {
+				const browse = browseEntries(loaded.entries, emptyQuery(), null, now);
+				if (cache && browse.bucket != null) cache.facets = loaded.facets;
+				return {
+					ordered: browse.ordered,
+					bucket: browse.bucket ?? bucket,
+					facets: loaded.facets
+				};
+			})
+			.finally(() => {
+				opening = null;
+			});
+	}
+	return opening;
 }
 
 export function shuffleBucket(now = Date.now()) {
@@ -82,25 +124,67 @@ export function workKey(entry: Pick<EntrySummary, 'title' | 'publication' | 'yea
  */
 export function spreadSameWork(entries: EntrySummary[], gap = SAME_WORK_GAP) {
 	const placed: EntrySummary[] = [];
+	const at = new Map<string, number[]>();
 	const deferred: EntrySummary[] = [];
 
 	for (const entry of entries) {
-		if (clashes(placed, entry, placed.length, gap)) deferred.push(entry);
-		else placed.push(entry);
+		if (clashesAt(at, entry, placed.length, gap)) deferred.push(entry);
+		else pushAt(placed, at, entry, placed.length);
 	}
 
 	for (const entry of deferred) {
 		let index = placed.length;
 		for (let candidate = 0; candidate <= placed.length; candidate++) {
-			if (!clashes(placed, entry, candidate, gap)) {
+			if (!clashesAt(at, entry, candidate, gap)) {
 				index = candidate;
 				break;
 			}
 		}
-		placed.splice(index, 0, entry);
+		insertAt(placed, at, entry, index);
 	}
 
 	return placed;
+}
+
+function clashesAt(at: Map<string, number[]>, entry: EntrySummary, index: number, gap: number) {
+	const spots = at.get(workKey(entry));
+	if (!spots) return false;
+	for (const i of spots) {
+		const distance = i < index ? index - i : i - index + 1;
+		if (distance < gap) return true;
+	}
+	return false;
+}
+
+function pushAt(
+	placed: EntrySummary[],
+	at: Map<string, number[]>,
+	entry: EntrySummary,
+	index: number
+) {
+	placed.push(entry);
+	const key = workKey(entry);
+	const spots = at.get(key);
+	if (spots) spots.push(index);
+	else at.set(key, [index]);
+}
+
+function insertAt(
+	placed: EntrySummary[],
+	at: Map<string, number[]>,
+	entry: EntrySummary,
+	index: number
+) {
+	placed.splice(index, 0, entry);
+	for (const spots of at.values()) {
+		for (let i = 0; i < spots.length; i++) {
+			if (spots[i] >= index) spots[i] += 1;
+		}
+	}
+	const key = workKey(entry);
+	const spots = at.get(key);
+	if (spots) spots.push(index);
+	else at.set(key, [index]);
 }
 
 function cachedOpenOrder(entries: EntrySummary[], now: number) {
@@ -110,7 +194,12 @@ function cachedOpenOrder(entries: EntrySummary[], now: number) {
 		return { ordered: cache.ordered, bucket };
 	}
 	const ordered = orderEntries(entries, bucket);
-	cache = { bucket, fingerprint: stamp, ordered };
+	cache = {
+		bucket,
+		fingerprint: stamp,
+		ordered,
+		facets: cache?.bucket === bucket ? cache.facets : null
+	};
 	return { ordered, bucket };
 }
 
@@ -118,18 +207,15 @@ function orderForBucket(entries: EntrySummary[], bucket: number) {
 	const stamp = fingerprint(entries);
 	if (cache?.bucket === bucket && cache.fingerprint === stamp) return cache.ordered;
 	const ordered = orderEntries(entries, bucket);
-	if (bucket === shuffleBucket()) cache = { bucket, fingerprint: stamp, ordered };
-	return ordered;
-}
-
-function clashes(placed: EntrySummary[], entry: EntrySummary, index: number, gap: number) {
-	const key = workKey(entry);
-	for (let i = 0; i < placed.length; i++) {
-		if (workKey(placed[i]) !== key) continue;
-		const distance = i < index ? index - i : i - index + 1;
-		if (distance < gap) return true;
+	if (bucket === shuffleBucket()) {
+		cache = {
+			bucket,
+			fingerprint: stamp,
+			ordered,
+			facets: cache?.bucket === bucket ? cache.facets : null
+		};
 	}
-	return false;
+	return ordered;
 }
 
 function seededShuffle(entries: EntrySummary[], bucket: number) {

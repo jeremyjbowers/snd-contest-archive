@@ -5,7 +5,9 @@ import {
 	SAME_WORK_GAP,
 	SHUFFLE_WINDOW_MS,
 	browseEntries,
+	cachedOpenBrowse,
 	clearShuffleCache,
+	openBrowse,
 	orderEntries,
 	shuffleBucket,
 	spreadSameWork,
@@ -108,4 +110,52 @@ test('two category submissions of one work are not neighbors', () => {
 	const left = ids(shuffled).indexOf('gold');
 	const right = ids(shuffled).indexOf('silver');
 	assert.ok(Math.abs(left - right) >= SAME_WORK_GAP);
+});
+
+test('an open draw is built once and reused for the rest of its window', async () => {
+	clearShuffleCache();
+	let loads = 0;
+	const entries = [
+		entry('a', 'Alpha', 'Daily', 2024),
+		entry('b', 'Beta', 'Paper', 2025),
+		entry('c', 'Alpha', 'Daily', 2024)
+	];
+	const facets = {
+		disciplines: ['News design'],
+		awards: ['Gold'],
+		platforms: ['Print'],
+		organizations: ['Daily'],
+		topics: [],
+		categories: ['News'],
+		yearMin: 2024,
+		yearMax: 2025
+	};
+	const first = await openBrowse(async () => {
+		loads += 1;
+		return { entries, facets };
+	}, 0);
+	const second = await openBrowse(async () => {
+		loads += 1;
+		return { entries, facets };
+	}, SHUFFLE_WINDOW_MS - 1);
+	assert.equal(loads, 1);
+	assert.equal(second.ordered, first.ordered);
+	assert.equal(second.facets, facets);
+	assert.equal(cachedOpenBrowse(0)?.ordered, first.ordered);
+});
+
+test('spreading thousands of cards finishes quickly', () => {
+	const entries = Array.from({ length: 8000 }, (_, index) =>
+		entry(
+			`id-${index}`,
+			index % 17 === 0 ? 'Shared work' : `Title ${index}`,
+			index % 17 === 0 ? 'The Paper' : `Publication ${index % 40}`,
+			2010 + (index % 16)
+		)
+	);
+	const started = Date.now();
+	const spread = orderEntries(entries, 4);
+	const elapsed = Date.now() - started;
+	assert.equal(spread.length, entries.length);
+	assert.ok(elapsed < 250, `shuffle took ${elapsed}ms`);
 });
