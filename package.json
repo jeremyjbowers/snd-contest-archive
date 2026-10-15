@@ -18,7 +18,7 @@
 		"catalog:fit": "tsx scripts/catalog.ts fit",
 		"catalog:load": "tsx scripts/catalog.ts load",
 		"catalog:migrate": "tsx scripts/migrate.ts",
-		"test": "tsx --test src/lib/catalog/ingest/ingest.test.ts src/lib/catalog/page.test.ts scripts/digitalocean-project.test.ts"
+		"test": "tsx --test src/lib/catalog/ingest/ingest.test.ts src/lib/catalog/page.test.ts src/lib/catalog/shuffle.test.ts scripts/digitalocean-project.test.ts"
 	},
 	"devDependencies": {
 		"@electric-sql/pglite": "^0.5.9",

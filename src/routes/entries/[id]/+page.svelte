@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { afterNavigate } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import AwardFlag from '$lib/components/Grid/AwardFlag.svelte';
+	import Caret from '$lib/components/Icons/Caret.svelte';
 	import Facebook from '$lib/components/Icons/Facebook.svelte';
 	import Heart from '$lib/components/Icons/Heart.svelte';
 	import Instagram from '$lib/components/Icons/Instagram.svelte';
@@ -9,6 +12,22 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+	let backToGrid = $state(false);
+
+	afterNavigate((navigation) => {
+		const from = navigation.from?.url;
+		const to = navigation.to?.url;
+		backToGrid = Boolean(from && to && from.origin === to.origin && from.pathname === '/');
+	});
+
+	function backToArchive(event: MouseEvent) {
+		if (!backToGrid) return;
+		if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0)
+			return;
+		event.preventDefault();
+		history.back();
+	}
+
 	const entry = $derived(data.entry);
 	const favorited = $derived(isFavorite(entry.id));
 	const creditLine = $derived(
@@ -33,6 +52,14 @@
 
 <article class="page">
 	<aside class="side-panel">
+		<nav class="crumb slug" aria-label="Breadcrumb">
+			<a href={resolve('/')} onclick={backToArchive}>
+				<span class="caret" aria-hidden="true"><Caret size={14} /></span>
+				the Archive
+			</a>
+			<span class="sep" aria-hidden="true">/</span>
+			<span class="here" aria-current="page">{entry.title}</span>
+		</nav>
 		<p class="year slug">{entry.year}</p>
 		<AwardFlag award={entry.award} facing="right" />
 		{#if entry.awards.length > 1}
@@ -133,9 +160,41 @@
 	.side-panel {
 		border-left: var(--border-width) solid var(--color-ink);
 		border-right: var(--border-width) solid var(--color-ink);
-		padding: 60px calc(var(--filter-inset) * 2) 0;
+		padding: 28px calc(var(--filter-inset) * 2) 0;
 		min-height: 0;
 		overflow-y: auto;
+	}
+
+	.crumb {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 28px;
+		min-width: 0;
+	}
+
+	.crumb a {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		flex: none;
+	}
+
+	.caret {
+		display: flex;
+		transform: rotate(-90deg);
+	}
+
+	.sep,
+	.here {
+		color: var(--color-muted);
+	}
+
+	.here {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.year {
