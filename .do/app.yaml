@@ -38,8 +38,8 @@ services:
         scope: RUN_TIME
         value: 0.0.0.0
     health_check:
-      http_path: /
-      initial_delay_seconds: 20
+      http_path: /health
+      initial_delay_seconds: 10
       period_seconds: 10
       timeout_seconds: 5
       failure_threshold: 5

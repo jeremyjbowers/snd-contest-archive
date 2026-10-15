@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { getCatalog } from '$lib/catalog';
 import { CARD_PAGE, pageOf } from '$lib/catalog/page';
-import { browseEntries } from '$lib/catalog/shuffle';
+import { browseEntries, cachedOpenBrowse, isOpenBrowse, shuffleBucket } from '$lib/catalog/shuffle';
 import { queryFromSearchParams } from '$lib/catalog/url';
 import type { RequestHandler } from './$types';
 
@@ -19,11 +19,13 @@ export const GET: RequestHandler = async ({ url }) => {
 	const query = queryFromSearchParams(url.searchParams);
 	const offset = Number(url.searchParams.get('offset'));
 	const limit = Number(url.searchParams.get('limit')) || CARD_PAGE;
-	const browse = browseEntries(
-		await catalog.listEntries(query),
-		query,
-		requestedBucket(url.searchParams)
-	);
+	const pinned = requestedBucket(url.searchParams);
+	if (isOpenBrowse(query)) {
+		const bucket = pinned ?? shuffleBucket();
+		const hit = cachedOpenBrowse(bucket);
+		if (hit) return json({ ...pageOf(hit.ordered, offset, limit), bucket: hit.bucket });
+	}
+	const browse = browseEntries(await catalog.listEntries(query), query, pinned);
 	const page = pageOf(browse.ordered, offset, limit);
 	return json({ ...page, bucket: browse.bucket });
 };
