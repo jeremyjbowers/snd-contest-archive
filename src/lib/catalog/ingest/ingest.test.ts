@@ -12,7 +12,7 @@ import { fromAwardForceRows } from './award-force';
 import { parseAwards } from './awards';
 import { fromFilesCsv } from './files';
 import { modelFit } from './model-fit';
-import { combineRecords, toEntry } from './record';
+import { combineRecords, toEntry, uniqueAssets } from './record';
 
 const SECRET_EMAIL = 'secret-entrant@example.com';
 const SECRET_PASSWORD = 'hunter2-do-not-store';
@@ -313,6 +313,8 @@ test('a markdown entry title is the link label, and screenshots count as the wor
 		dumped.assets.some((asset) => asset.locator.includes('shot-full')),
 		true
 	);
+	const doubled = uniqueAssets([...dumped.assets, ...dumped.assets]);
+	assert.equal(doubled.length, dumped.assets.length);
 	assert.equal(toEntry(record!)?.thumbnail, '');
 });
 

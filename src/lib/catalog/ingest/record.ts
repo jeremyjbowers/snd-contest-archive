@@ -139,6 +139,23 @@ function blockReason(
 	return null;
 }
 
+/** One row can be exported twice. Keep the first copy of each file and renumber. */
+export function uniqueAssets(assets: SourceAsset[]): SourceAsset[] {
+	const groups = new Map<string, SourceAsset[]>();
+	for (const asset of assets) {
+		const key = `${asset.sourceKey}\0${asset.origin}`;
+		const list = groups.get(key) ?? [];
+		if (list.some((item) => item.locator === asset.locator)) continue;
+		list.push(asset);
+		groups.set(key, list);
+	}
+	const result: SourceAsset[] = [];
+	for (const list of groups.values()) {
+		list.forEach((asset, index) => result.push({ ...asset, sortOrder: index }));
+	}
+	return result;
+}
+
 export function combineRecords(records: SubmissionRecord[]) {
 	const byKey = new Map<string, SubmissionRecord>();
 	for (const record of records) {

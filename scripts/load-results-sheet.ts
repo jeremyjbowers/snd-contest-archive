@@ -13,6 +13,7 @@ import { asStoredImage, isDurableImage, sniffImage } from '../src/lib/catalog/in
 import { modelFit } from '../src/lib/catalog/ingest/model-fit.ts';
 import {
 	combineRecords,
+	uniqueAssets,
 	type SourceAsset,
 	type SubmissionRecord
 } from '../src/lib/catalog/ingest/record.ts';
@@ -39,7 +40,7 @@ const records = combineRecords(loaded.records);
 console.log(
 	`Read ${records.length} results rows, ${loaded.assets.length} assets, from ${options.dumps.length} dumps`
 );
-const mirrored = await mirrorPreviews(loaded.assets, options.cache);
+const mirrored = await mirrorPreviews(uniqueAssets(loaded.assets), options.cache);
 if (options.mirrorOnly) process.exit(0);
 if (!database) throw new Error('Pass --database postgres://...');
 const result = await loadCatalog(pgSql(database), {
