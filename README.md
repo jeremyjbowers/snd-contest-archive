@@ -51,6 +51,8 @@ CATALOG_URL=postgres://user:pass@host:5432/snd
 
 **Postgres** is the persistence target for real contest data. `npm run catalog:migrate` creates the tables in `data/postgres.sql`. `npm run catalog:load` applies that schema and upserts rows. Point the app at them with `CATALOG_URL=postgres://user:pass@host:5432/snd`.
 
+To point a local checkout at the **production** database for read-only frontend work (IP whitelist + `CATALOG_URL`), see **[docs/local-prod-db.md](docs/local-prod-db.md)**.
+
 ## DigitalOcean
 
 `.do/app.yaml` is the App Platform spec: a 512 MiB web service and a pre-deploy job that runs `catalog:migrate`. The database is an existing managed Postgres cluster named `snd-archive-pg` (1 GiB, one node, about $15 a month). The web service is about $5 a month. There is no standby node.
