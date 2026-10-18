@@ -1,7 +1,7 @@
 import type { EntrySummary } from './types';
 
-/** First screen, plus a few rows so the next fetch starts before the grid runs out. */
-export const CARD_PAGE = 24;
+/** Cards returned for one archive page, including the homepage draw. */
+export const CARD_PAGE = 100;
 
 /** Newest season first. The id keeps a page boundary from shifting between requests. */
 export function byArchiveOrder(entries: EntrySummary[]): EntrySummary[] {

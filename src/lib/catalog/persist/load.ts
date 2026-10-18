@@ -5,6 +5,7 @@ import {
 	combineRecords,
 	mergeRecords,
 	toEntry,
+	uniqueAssets,
 	type SourceAsset,
 	type SubmissionRecord
 } from '../ingest/record';
@@ -26,8 +27,9 @@ export async function loadCatalog(
 ) {
 	await applySchema(sql, schema);
 	const merged = await mergeWithStored(sql, combineRecords(batch.records));
-	const origins = [...new Set(batch.assets.map((asset) => asset.origin))];
-	const assetsByKey = groupAssets(batch.assets);
+	const assets = uniqueAssets(batch.assets);
+	const origins = [...new Set(assets.map((asset) => asset.origin))];
+	const assetsByKey = groupAssets(assets);
 
 	await sql.exec('BEGIN');
 	try {
@@ -40,7 +42,7 @@ export async function loadCatalog(
 		for (const origin of origins) {
 			await sql.query('DELETE FROM source_assets WHERE origin = $1', [origin]);
 		}
-		for (const asset of batch.assets) {
+		for (const asset of assets) {
 			await sql.query(
 				`INSERT INTO source_assets (
 					source_key, origin, sort_order, kind, label, filename, media_type, byte_size, locator, expires_hours

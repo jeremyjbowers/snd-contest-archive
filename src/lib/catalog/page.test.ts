@@ -50,5 +50,15 @@ test('archive pages are newest-first and do not overlap', () => {
 	);
 	assert.equal(pageOf(ordered, 99).entries.length, 0);
 	assert.equal(pageOf(ordered, -4, 0).entries.length, 4);
-	assert.ok(CARD_PAGE >= 12);
+	assert.equal(CARD_PAGE, 100);
+});
+
+test('each page returns 100 cards and will not return more than two pages at once', () => {
+	const entries = Array.from({ length: 250 }, (_, index) =>
+		entry(String(index).padStart(3, '0'), 2020, 'Paper')
+	);
+	assert.equal(pageOf(entries, 0).entries.length, 100);
+	assert.equal(pageOf(entries, 100).entries.length, 100);
+	assert.equal(pageOf(entries, 200).entries.length, 50);
+	assert.equal(pageOf(entries, 0, 500).entries.length, 200);
 });

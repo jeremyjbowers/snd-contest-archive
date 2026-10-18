@@ -23,7 +23,7 @@
 		// { href: '/challenge', label: 'snd challenge' },
 		// { href: '/', label: 'archive' }
 	] as const;
-	const externalLinks = [{ href: 'https://www.snd.org', label: 'snd home' }] as const;
+	const externalLinks = [{ href: 'https://www.snd.org', label: 'snd.org' }] as const;
 
 	function hoverOpen(event: PointerEvent) {
 		if (event.pointerType !== 'mouse') return;

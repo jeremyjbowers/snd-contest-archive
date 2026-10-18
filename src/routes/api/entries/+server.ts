@@ -1,8 +1,17 @@
 import { json } from '@sveltejs/kit';
 import { getCatalog } from '$lib/catalog';
-import { CARD_PAGE, byArchiveOrder, pageOf } from '$lib/catalog/page';
+import { CARD_PAGE, pageOf } from '$lib/catalog/page';
+import { browseEntries, cachedOpenBrowse, isOpenBrowse, shuffleBucket } from '$lib/catalog/shuffle';
 import { queryFromSearchParams } from '$lib/catalog/url';
 import type { RequestHandler } from './$types';
+
+function requestedBucket(params: URLSearchParams) {
+	const raw = params.get('bucket');
+	if (raw == null) return null;
+	const bucket = Number(raw);
+	if (!Number.isInteger(bucket) || bucket < 0 || bucket > Number.MAX_SAFE_INTEGER) return null;
+	return bucket;
+}
 
 /** The next screen of cards. The archive page calls this as the grid scrolls. */
 export const GET: RequestHandler = async ({ url }) => {
@@ -10,6 +19,13 @@ export const GET: RequestHandler = async ({ url }) => {
 	const query = queryFromSearchParams(url.searchParams);
 	const offset = Number(url.searchParams.get('offset'));
 	const limit = Number(url.searchParams.get('limit')) || CARD_PAGE;
-	const page = pageOf(byArchiveOrder(await catalog.listEntries(query)), offset, limit);
-	return json(page);
+	const pinned = requestedBucket(url.searchParams);
+	if (isOpenBrowse(query)) {
+		const bucket = pinned ?? shuffleBucket();
+		const hit = cachedOpenBrowse(bucket);
+		if (hit) return json({ ...pageOf(hit.ordered, offset, limit), bucket: hit.bucket });
+	}
+	const browse = browseEntries(await catalog.listEntries(query), query, pinned);
+	const page = pageOf(browse.ordered, offset, limit);
+	return json({ ...page, bucket: browse.bucket });
 };
