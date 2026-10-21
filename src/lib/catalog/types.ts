@@ -105,12 +105,12 @@ export const CANONICAL_FACETS = {
 		'Video'
 	],
 	awards: [
+		'Bronze',
 		'Silver',
 		'Gold',
-		'Bronze',
 		'Award of Excellence',
-		'Best in Show',
 		"Judge's Special Recognition",
+		'Best in Show',
 		"World's Best"
 	],
 	platforms: ['Print', 'Digital', 'Social', 'Multiplatform', 'Other']

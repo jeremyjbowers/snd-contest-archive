@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { afterNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { archiveHref } from '$lib/archive-return.svelte';
 	import AwardFlag from '$lib/components/Grid/AwardFlag.svelte';
 	import Caret from '$lib/components/Icons/Caret.svelte';
 	import Facebook from '$lib/components/Icons/Facebook.svelte';
@@ -12,21 +12,9 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	let backToGrid = $state(false);
 
-	afterNavigate((navigation) => {
-		const from = navigation.from?.url;
-		const to = navigation.to?.url;
-		backToGrid = Boolean(from && to && from.origin === to.origin && from.pathname === '/');
-	});
-
-	function backToArchive(event: MouseEvent) {
-		if (!backToGrid) return;
-		if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0)
-			return;
-		event.preventDefault();
-		history.back();
-	}
+	const CARET = 16; // each of the two back carets
+	const CARETS = 20; // width of the pair; they overlap a little
 
 	const entry = $derived(data.entry);
 	const favorited = $derived(isFavorite(entry.id));
@@ -35,6 +23,17 @@
 			.map((credit) => (credit.role ? `${credit.name}, ${credit.role}` : credit.name))
 			.join('; ')
 	);
+
+	function fitImage(node: HTMLElement) {
+		if (!(node instanceof HTMLImageElement)) return;
+		const apply = () => {
+			if (!node.naturalHeight) return;
+			node.style.setProperty('--ratio', String(node.naturalWidth / node.naturalHeight)); // width ÷ height of the file
+		};
+		apply();
+		node.addEventListener('load', apply);
+		return () => node.removeEventListener('load', apply);
+	}
 
 	async function share() {
 		const url = window.location.href;
@@ -53,18 +52,20 @@
 <article class="page">
 	<aside class="side-panel">
 		<nav class="crumb slug" aria-label="Breadcrumb">
-			<a href={resolve('/')} onclick={backToArchive}>
-				<span class="caret" aria-hidden="true"><Caret size={14} /></span>
-				the Archive
+			<a href="{resolve('/')}{archiveHref().slice(1)}" style:--icon="{CARETS}px">
+				<span class="icon carets">
+					<Caret size={CARET} />
+					<Caret size={CARET} />
+				</span>
+				Back to the archive
 			</a>
-			<span class="sep" aria-hidden="true">/</span>
-			<span class="here" aria-current="page">{entry.title}</span>
 		</nav>
 		<p class="year slug">{entry.year}</p>
 		<AwardFlag award={entry.award} facing="right" />
-		{#if entry.awards.length > 1}
+		<!-- need to figure out how else to handle multiple award winners! -->
+		<!-- {#if entry.awards.length > 1}
 			<p class="also">{entry.awards.filter((item) => item !== entry.award).join(' · ')}</p>
-		{/if}
+		{/if} -->
 		<h1>{entry.publication}</h1>
 		<p class="work-title">{entry.title}</p>
 
@@ -88,19 +89,17 @@
 					<dd>{entry.description}</dd>
 				</div>
 			{/if}
-			{#if entry.url}
-				<div>
-					<dt class="slug">Link</dt>
-					<dd>
-						<a href={entry.url} rel="external noreferrer">{entry.url.replace(/^https?:\/\//, '')}</a
-						>
-					</dd>
-				</div>
-			{/if}
 			<div>
 				<dt class="slug">platform</dt>
 				<dd>{entry.platform}</dd>
 			</div>
+			{#if entry.url}
+				<div>
+					<dd>
+						<a class="slug out" href={entry.url} target="_blank" rel="noopener noreferrer">Link</a>
+					</dd>
+				</div>
+			{/if}
 		</dl>
 
 		<div class="share">
@@ -130,8 +129,10 @@
 	<section class="gallery" aria-label={entry.title}>
 		{#each entry.images as image, index (image + index)}
 			<img
+				class="fit"
 				src={image}
 				alt="{entry.title}, image {index + 1}"
+				{@attach fitImage}
 				onerror={(event) => {
 					if (event.currentTarget instanceof HTMLImageElement) event.currentTarget.hidden = true;
 				}}
@@ -176,25 +177,24 @@
 	.crumb a {
 		display: inline-flex;
 		align-items: center;
-		gap: 4px;
+		gap: 0px;
 		flex: none;
 	}
-
-	.caret {
+	.icon {
 		display: flex;
-		transform: rotate(-90deg);
+		justify-content: center;
+	}
+	.carets :global(svg) {
+		rotate: -90deg; /* caret asset points up */
 	}
 
-	.sep,
-	.here {
-		color: var(--color-muted);
+	.carets :global(svg + svg) {
+		margin-left: -10px; /* overlap the pair into one « mark */
 	}
 
-	.here {
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+	.out {
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
 	}
 
 	.year {
@@ -256,20 +256,28 @@
 		gap: 24px;
 		min-height: 0;
 		overflow-y: scroll;
-		scrollbar-width: none;
-	}
-
-	.gallery::-webkit-scrollbar {
-		display: none;
-		width: 0;
-		height: 0;
+		scrollbar-width: none; /* this pane scrolls without a bar */
+		container-type: size; /* 100cqw / 100cqh are this pane, inside the padding */
 	}
 
 	.gallery img {
-		width: 100%;
+		width: auto;
 		height: auto;
+		max-width: 100%;
+		max-height: 100%;
+		align-self: center;
+		flex: none;
 		border: var(--border-width) solid var(--color-ink);
 		background: var(--color-paper);
+	}
+
+	.gallery img.fit {
+		width: min(
+			100cqw,
+			calc((100cqh - 2 * var(--border-width)) * var(--ratio) + 2 * var(--border-width))
+		); /* full width, or the width that fills the height, border included */
+		max-width: none;
+		max-height: 100cqh;
 	}
 
 	@media (max-width: 900px) {
@@ -291,6 +299,14 @@
 		.gallery {
 			padding: 0;
 			overflow: visible;
+			container-type: normal;
+		}
+
+		.gallery img {
+			width: 100%;
+			max-height: none;
+			height: auto;
+			align-self: stretch;
 		}
 	}
 </style>

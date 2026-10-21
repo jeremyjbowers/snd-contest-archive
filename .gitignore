@@ -18,6 +18,10 @@ vite.config.ts.timestamp-*
 !.env.example
 !.env.test
 
+# Local pulls from the production catalog
+docs/topics.csv
+docs/categories.csv
+
 # Local databases
 *.db
 *.db-journal

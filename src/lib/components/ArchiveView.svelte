@@ -21,13 +21,23 @@
 		gridLabel: string;
 		empty?: Snippet;
 	} = $props();
+
+	const queryKey = $derived(JSON.stringify(query));
+
+	// The grid remounts per filter. Phone layout scrolls the window instead.
+	function pinTop(node: HTMLElement) {
+		node.scrollTop = 0;
+		if (!/(auto|scroll)/.test(getComputedStyle(node).overflowY)) window.scrollTo(0, 0);
+	}
 </script>
 
 <main class="page">
 	<div class="rail">
 		<div class="kicker">
-			<p class="the">the</p>
-			<h1>{title}</h1>
+			{#if title === 'Archive'}
+				<p class="the">the</p>
+			{/if}
+			<h1 class:favorites={title === 'Favorites'}>{title}</h1>
 			{#if lede}
 				<p class="lede">{lede}</p>
 			{/if}
@@ -35,12 +45,14 @@
 		<FilterPanel {facets} {query} />
 	</div>
 
-	<section class="grid" aria-label={gridLabel}>
-		<EntryGrid {entries} />
-		{#if !entries.length && empty}
-			<p class="empty">{@render empty()}</p>
-		{/if}
-	</section>
+	{#key queryKey}
+		<section class="grid" aria-label={gridLabel} {@attach pinTop}>
+			<EntryGrid {entries} />
+			{#if !entries.length && empty}
+				<p class="empty">{@render empty()}</p>
+			{/if}
+		</section>
+	{/key}
 </main>
 
 <style>
@@ -61,6 +73,7 @@
 		margin: 0 auto;
 		height: calc(100dvh - var(--header-height) - var(--border-width));
 		overflow: hidden;
+		overflow-anchor: none;
 		contain: paint;
 	}
 
@@ -89,6 +102,9 @@
 		text-box-edge: cap alphabetic;
 		text-box-trim: trim-both;
 	}
+	h1.favorites {
+		font-size: clamp(48px, 6vw, 60px);
+	}
 
 	.lede {
 		font-family: var(--font-sans);
@@ -106,6 +122,7 @@
 		align-content: start;
 		min-height: 0;
 		overflow-y: auto;
+		overflow-anchor: none;
 		padding: 0 24px 50px;
 		border-right: var(--border-width) solid var(--color-ink);
 	}

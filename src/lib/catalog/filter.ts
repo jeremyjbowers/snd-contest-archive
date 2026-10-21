@@ -107,21 +107,43 @@ function unionCanonical(canonical: readonly string[], fromData: string[]) {
 	return [...canonical, ...fromData.filter((value) => !seen.has(value))];
 }
 
+const AWARD_FILTER_ORDER = [
+	'Bronze',
+	'Silver',
+	'Gold',
+	'Award of Excellence',
+	"Judge's Special Recognition",
+	'Best in Show',
+	"World's Best",
+	"World's Best Designer",
+	"World's Best Emerging Designer",
+	"World's Best Designed Finalist"
+];
+
+function byAwardOrder(values: string[]) {
+	const rank = new Map(AWARD_FILTER_ORDER.map((name, index) => [name, index]));
+	return [...values].sort((a, b) => {
+		const left = rank.get(a) ?? AWARD_FILTER_ORDER.length;
+		const right = rank.get(b) ?? AWARD_FILTER_ORDER.length;
+		if (left !== right) return left - right;
+		return a.localeCompare(b);
+	});
+}
+
 export function buildFacets(entries: Entry[]): Facets {
 	const years = entries.map((entry) => entry.year);
 	return {
-		disciplines: unionCanonical(
-			CANONICAL_FACETS.disciplines,
-			uniqueSorted(entries.map((entry) => entry.discipline))
+		disciplines: uniqueSorted([
+			...CANONICAL_FACETS.disciplines,
+			...entries.map((entry) => entry.discipline)
+		]),
+		awards: byAwardOrder(
+			unionCanonical(CANONICAL_FACETS.awards, uniqueSorted(entries.map((entry) => entry.award)))
 		),
-		awards: unionCanonical(
-			CANONICAL_FACETS.awards,
-			uniqueSorted(entries.map((entry) => entry.award))
-		),
-		platforms: unionCanonical(
-			CANONICAL_FACETS.platforms,
-			uniqueSorted(entries.map((entry) => entry.platform))
-		),
+		platforms: uniqueSorted([
+			...CANONICAL_FACETS.platforms,
+			...entries.map((entry) => entry.platform)
+		]),
 		organizations: uniqueSorted(entries.map((entry) => entry.publication)),
 		topics: uniqueSorted(entries.map((entry) => entry.topic)),
 		categories: uniqueSorted(entries.map((entry) => entry.category)),

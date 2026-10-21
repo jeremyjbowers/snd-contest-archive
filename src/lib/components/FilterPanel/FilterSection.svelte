@@ -7,15 +7,18 @@
 
 	let {
 		title,
-		open = $bindable(true),
+		startsOpen = true,
 		before,
 		children
 	}: {
 		title: string;
-		open?: boolean;
+		startsOpen?: boolean;
 		before?: Snippet;
 		children?: Snippet;
 	} = $props();
+
+	// svelte-ignore state_referenced_locally
+	let open = $state(startsOpen); // initial only; the section remounts to reset
 </script>
 
 <section class="section" class:open>

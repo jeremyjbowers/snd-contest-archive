@@ -4,12 +4,16 @@
 	import { cubicOut } from 'svelte/easing';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { slide } from 'svelte/transition';
+	import { archiveHref } from '$lib/archive-return.svelte';
 	import Burger from '../Icons/Burger.svelte';
+	import Caret from '../Icons/Caret.svelte';
 	import Heart from '../Icons/Heart.svelte';
 
 	const MENU_MS = 300;
 	const MARK = 18;
 	const HEART = 16;
+	const CARET = 16; // each of the two back carets
+	const CARETS = 20; // width of the pair; they overlap a little
 
 	let menuOpen = $state(false);
 	let pointerOver = false; // mouse is inside the button or the open panel
@@ -117,15 +121,20 @@
 		</a>
 
 		<nav class="right">
-			<a
-				class="nav-link"
-				href={resolve('/favorites')}
-				class:active={page.url.pathname === '/favorites'}
-				style:--heart="{HEART}px"
-			>
-				Favorites
-				<span class="heart"><Heart size={HEART} filled /></span>
-			</a>
+			{#if page.url.pathname === '/favorites'}
+				<a class="nav-link" href="{resolve('/')}{archiveHref().slice(1)}" style:--icon="{CARETS}px">
+					Back to the archive
+					<span class="icon carets">
+						<Caret size={CARET} />
+						<Caret size={CARET} />
+					</span>
+				</a>
+			{:else}
+				<a class="nav-link" href={resolve('/favorites')} style:--icon="{HEART}px">
+					Favorites
+					<span class="icon"><Heart size={HEART} filled /></span>
+				</a>
+			{/if}
 			<!-- <a class="nav-link" href={resolve('/account')}>account</a> -->
 		</nav>
 	</div>
@@ -143,6 +152,7 @@
 		--gap: 5px; /* between word and icon */
 		--pad: 8px; /* chip padding beside the word */
 		--pad-y: 5px; /* chip padding above caps and below baseline */
+		--bar-pad: 6px; /* space between the chips and the bottom rule */
 		position: sticky;
 		top: 0;
 		z-index: 20;
@@ -151,13 +161,13 @@
 	}
 
 	.bar {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-end;
+		display: grid;
+		grid-template-columns: 1fr auto 1fr; /* logo stays centered whatever the side links do */
+		align-items: end;
 		height: var(--header-height);
 		max-width: var(--page-max);
 		margin: 0 auto;
-		padding: 0 var(--page-gutter) 6px;
+		padding: 0 var(--page-gutter) var(--bar-pad);
 	}
 
 	.left,
@@ -168,7 +178,12 @@
 		position: relative;
 	}
 
+	.right {
+		justify-self: end;
+	}
+
 	.menu-btn {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
 		gap: var(--gap);
@@ -184,6 +199,16 @@
 			margin-right var(--menu-ms) var(--menu-ease),
 			background-color var(--menu-ms) var(--menu-ease),
 			color var(--menu-ms) var(--menu-ease);
+	}
+
+	.menu-btn::after {
+		content: ''; /* bridge from the chip down to the panel; fades with the chip */
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
+		height: var(--bar-pad);
+		background-color: inherit;
 	}
 
 	.mark {
@@ -217,8 +242,8 @@
 		gap: 0;
 		padding: var(--pad-y) 0;
 		margin-left: calc(
-			var(--heart) + var(--gap) + 2 * var(--pad)
-		); /* room for the heart, held so the logo stays put */
+			var(--icon) + var(--gap) + 2 * var(--pad)
+		); /* room for the icon, held so the word doesn't shift */
 		line-height: 1;
 		color: var(--color-ink);
 		background-color: transparent;
@@ -230,7 +255,7 @@
 			color var(--menu-ms) var(--menu-ease);
 	}
 
-	.heart {
+	.icon {
 		display: flex;
 		justify-content: center;
 		width: 0;
@@ -238,13 +263,17 @@
 		transition: width var(--menu-ms) var(--menu-ease);
 	}
 
-	.heart :global(svg) {
+	.icon :global(svg) {
 		transform: scale(0);
 		transition: transform var(--menu-ms) var(--menu-ease);
 	}
 
-	.nav-link.active {
-		color: var(--color-accent);
+	.carets :global(svg) {
+		rotate: -90deg; /* caret asset points up */
+	}
+
+	.carets :global(svg + svg) {
+		margin-left: -10px; /* overlap the pair into one « mark */
 	}
 
 	.nav-link:hover,
@@ -256,9 +285,9 @@
 		color: var(--color-bg);
 	}
 
-	.nav-link:hover .heart,
-	.nav-link:focus-visible .heart {
-		width: var(--heart);
+	.nav-link:hover .icon,
+	.nav-link:focus-visible .icon {
+		width: var(--icon);
 	}
 
 	.nav-link:hover :global(svg),
@@ -270,8 +299,8 @@
 		.menu-btn,
 		.mark,
 		.nav-link,
-		.heart,
-		.heart :global(svg) {
+		.icon,
+		.icon :global(svg) {
 			transition: none;
 		}
 	}
@@ -291,7 +320,7 @@
 
 	.dropdown {
 		position: absolute;
-		top: 100%;
+		top: calc(100% + var(--bar-pad)); /* top edge meets the bottom rule */
 		left: 0;
 		width: var(--filter-width);
 		background: var(--color-ink);

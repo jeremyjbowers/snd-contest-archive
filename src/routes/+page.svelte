@@ -10,21 +10,36 @@
 	let { data }: PageProps = $props();
 
 	let extra = $state<EntrySummary[]>([]);
+	let extraKey = $state('');
 	let loading = $state(false);
 	let failed = $state(false);
-	let ticket = 0;
-	let sentinel = $state<HTMLButtonElement | null>(null);
-	const shown = $derived([...data.entries, ...extra]);
+	let pendingKey = '';
+	const queryKey = $derived(JSON.stringify(data.query));
+	// Pages fetched for an older filter stay out of the new list.
+	const shown = $derived(extraKey === queryKey ? [...data.entries, ...extra] : data.entries);
+	const busy = $derived(loading && pendingKey === queryKey);
+	const error = $derived(failed && pendingKey === queryKey);
 
-	$effect(() => {
-		const firstPage = data.entries;
-		const count = data.total;
-		if (count < firstPage.length) return;
-		extra = [];
-		failed = false;
-		loading = false;
-		ticket += 1;
-	});
+	// The grid remounts per filter. Phone layout scrolls the window instead.
+	function pinTop(node: HTMLElement) {
+		node.scrollTop = 0;
+		if (!/(auto|scroll)/.test(getComputedStyle(node).overflowY)) window.scrollTo(0, 0);
+	}
+
+	function watchMore(loaded: number) {
+		return (node: HTMLButtonElement) => {
+			if (!browser || loaded < 0) return;
+			const root = scrollingAncestor(node);
+			const observer = new IntersectionObserver(
+				(records) => {
+					if (records.some((record) => record.isIntersecting)) void more();
+				},
+				{ root, rootMargin: '640px' }
+			);
+			observer.observe(node);
+			return () => observer.disconnect();
+		};
+	}
 
 	function scrollingAncestor(node: HTMLElement): Element | null {
 		let parent = node.parentElement;
@@ -38,9 +53,10 @@
 	}
 
 	async function more() {
-		if (loading || shown.length >= data.total) return;
-		const mine = ticket;
+		const key = queryKey;
+		if (busy || shown.length >= data.total) return;
 		const offset = shown.length;
+		pendingKey = key;
 		loading = true;
 		failed = false;
 		try {
@@ -51,30 +67,18 @@
 			const response = await fetch(`/api/entries?${params}`);
 			if (!response.ok) throw new Error('Could not load more entries');
 			const body = (await response.json()) as { entries: EntrySummary[] };
-			if (mine !== ticket) return;
-			const seen = new Set(shown.map((entry) => entry.id));
-			extra = [...extra, ...body.entries.filter((entry) => !seen.has(entry.id))];
+			if (key !== queryKey) return;
+			const prior = extraKey === key ? extra : [];
+			const have = [...data.entries, ...prior].map((entry) => entry.id);
+			const added = body.entries.filter((entry) => !have.includes(entry.id));
+			extra = extraKey === key ? [...extra, ...added] : added;
+			extraKey = key;
 		} catch {
-			if (mine === ticket) failed = true;
+			if (key === queryKey) failed = true;
 		} finally {
-			if (mine === ticket) loading = false;
+			if (key === queryKey) loading = false;
 		}
 	}
-
-	$effect(() => {
-		const node = sentinel;
-		const loaded = shown.length;
-		if (!browser || !node || loaded < 0) return;
-		const root = scrollingAncestor(node);
-		const observer = new IntersectionObserver(
-			(records) => {
-				if (records.some((record) => record.isIntersecting)) void more();
-			},
-			{ root, rootMargin: '640px' }
-		);
-		observer.observe(node);
-		return () => observer.disconnect();
-	});
 </script>
 
 <svelte:head>
@@ -86,27 +90,29 @@
 		<div class="kicker">
 			<p class="the">the</p>
 			<h1>Archive</h1>
-			<p class="lede">Winners from the past TK years of the Creative Competition</p>
+			<p class="leadin">Winners from 40+ years of SND's Creative Competition</p>
 		</div>
 		<FilterPanel facets={data.facets} query={data.query} />
 	</div>
 
-	<section class="grid" aria-label="Archive entries">
-		<EntryGrid entries={shown} />
-		{#if !shown.length}
-			<p class="empty">No entries match those filters.</p>
-		{:else if shown.length < data.total}
-			<button
-				class="more"
-				type="button"
-				bind:this={sentinel}
-				onclick={() => more()}
-				disabled={loading}
-			>
-				{failed ? 'Could not load more. Try again.' : loading ? 'Loading more' : 'Load more'}
-			</button>
-		{/if}
-	</section>
+	{#key queryKey}
+		<section class="grid" aria-label="Archive entries" {@attach pinTop}>
+			<EntryGrid entries={shown} />
+			{#if !shown.length}
+				<p class="empty">No entries match those filters.</p>
+			{:else if shown.length < data.total}
+				<button
+					class="more"
+					type="button"
+					{@attach watchMore(shown.length)}
+					onclick={() => more()}
+					disabled={busy}
+				>
+					{error ? 'Could not load more. Try again.' : busy ? 'Loading more' : 'Load more'}
+				</button>
+			{/if}
+		</section>
+	{/key}
 </main>
 
 <style>
@@ -127,6 +133,7 @@
 		margin: 0 auto;
 		height: calc(100dvh - var(--header-height) - var(--border-width));
 		overflow: hidden;
+		overflow-anchor: none;
 		contain: paint;
 	}
 
@@ -156,12 +163,12 @@
 		text-box-trim: trim-both;
 	}
 
-	.lede {
+	.leadin {
 		font-family: var(--font-sans);
 		color: var(--color-muted);
-		font-size: 13px;
+		font-size: 14px;
 		font-weight: 200;
-		font-stretch: 80%;
+		font-stretch: 83%;
 	}
 
 	.grid {
@@ -172,6 +179,7 @@
 		align-content: start;
 		min-height: 0;
 		overflow-y: auto;
+		overflow-anchor: none;
 		padding: 0 24px 50px;
 		border-right: var(--border-width) solid var(--color-ink);
 	}

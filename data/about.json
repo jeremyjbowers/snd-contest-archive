@@ -1,0 +1,41 @@
+{
+	"title": "About the Archive",
+	"sections": [
+		{
+			"flag": "The Organization",
+			"blocks": [
+				{
+					"heading": "Who we are",
+					"paragraphs": [
+						"The Society for News Design was founded in TK year with the mission of doing TK things that are important. As part of that objective, SND began running its Creative Competition in TK year. Here we put some other things about how the competition has run over the years, hopefully interesting details and not just an incredibly boring mission statement kind of thing."
+					]
+				},
+				{
+					"heading": "Why we built this",
+					"paragraphs": [
+						"Something here about how this is a member-driven organization, that's been a part of SND from the beginning. The competition has showcased the best of the best of visual journalism for 40+ years. We realized that a lot of that valuable history was hidden away in databases and print books that few had access to.",
+						"Something more about how we wanted to make our archives open to all of our members."
+					]
+				}
+			]
+		},
+		{
+			"flag": "The Project",
+			"blocks": [
+				{
+					"heading": "Timeline",
+					"paragraphs": [
+						"Putting the full archives online is a big undertaking, and it's going to take time for our small team to get everything online at the standard that we want. We're starting out with TK years of the competition, and are aiming to add more years over TK rough timeline."
+					]
+				},
+				{
+					"heading": "Getting involved",
+					"paragraphs": [
+						"If you have any interest in helping us with the archive, or in being involved in SND more broadly, we would love to hear from you!",
+						"Reach out to TK person at TK email."
+					]
+				}
+			]
+		}
+	]
+}
