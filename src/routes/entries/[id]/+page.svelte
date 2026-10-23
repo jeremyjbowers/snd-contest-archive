@@ -51,7 +51,7 @@
 
 <article class="page">
 	<aside class="side-panel">
-		<nav class="crumb slug" aria-label="Breadcrumb">
+		<nav class="crumb slug-mid" aria-label="Breadcrumb">
 			<a href="{resolve('/')}{archiveHref().slice(1)}" style:--icon="{CARETS}px">
 				<span class="icon carets">
 					<Caret size={CARET} />

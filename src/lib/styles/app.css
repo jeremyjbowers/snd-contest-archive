@@ -103,6 +103,14 @@ p {
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
 }
+.slug-mid {
+	font-family: var(--font-sans);
+	font-weight: 500;
+	font-size: 13px;
+	font-stretch: 92%;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
 /* .slug-light {
 	font-family: var(--font-sans);
 	font-size: 14px;

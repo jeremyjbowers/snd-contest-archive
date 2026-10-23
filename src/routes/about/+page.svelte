@@ -18,7 +18,7 @@
 					<AwardFlag award={section.flag} variant="section" facing="right" />
 					{#each section.blocks as block (block.heading)}
 						<div class="block">
-							<h2>{block.heading}</h2>
+							<h2 class='slug-mid'>{block.heading}</h2>
 							{#each block.paragraphs as paragraph (paragraph)}
 								<p>{paragraph}</p>
 							{/each}
@@ -88,11 +88,6 @@
 
 	h2 {
 		margin-bottom: 10px;
-		font-family: var(--font-sans);
-		font-weight: 500;
-		font-size: 12px;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
 	}
 
 	p {
