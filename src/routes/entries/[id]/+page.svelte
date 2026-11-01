@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { afterNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { archiveHref } from '$lib/archive-return.svelte';
 	import AwardFlag from '$lib/components/Grid/AwardFlag.svelte';
@@ -15,6 +16,20 @@
 
 	const CARET = 16; // each of the two back carets
 	const CARETS = 20; // width of the pair; they overlap a little
+
+	let slide = $state(0); // image in view in the mobile carousel
+	let fromArchive = false; // opened from the grid in this tab
+
+	afterNavigate(({ from }) => {
+		fromArchive = from?.url.pathname === '/';
+	});
+
+	// history back keeps the grid's scroll position; a fresh link starts at the top
+	function back(event: MouseEvent) {
+		if (!fromArchive) return;
+		event.preventDefault();
+		history.back();
+	}
 
 	const entry = $derived(data.entry);
 	const favorited = $derived(isFavorite(entry.id));
@@ -52,7 +67,7 @@
 <article class="page">
 	<aside class="side-panel">
 		<nav class="crumb slug-mid" aria-label="Breadcrumb">
-			<a href="{resolve('/')}{archiveHref().slice(1)}" style:--icon="{CARETS}px">
+			<a href="{resolve('/')}{archiveHref().slice(1)}" style:--icon="{CARETS}px" onclick={back}>
 				<span class="icon carets">
 					<Caret size={CARET} />
 					<Caret size={CARET} />
@@ -126,19 +141,33 @@
 		</div>
 	</aside>
 
-	<section class="gallery" aria-label={entry.title}>
+	<section
+		class="gallery"
+		aria-label={entry.title}
+		onscroll={(event) =>
+			(slide = Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))}
+	>
 		{#each entry.images as image, index (image + index)}
-			<img
-				class="fit"
-				src={image}
-				alt="{entry.title}, image {index + 1}"
-				{@attach fitImage}
-				onerror={(event) => {
-					if (event.currentTarget instanceof HTMLImageElement) event.currentTarget.hidden = true;
-				}}
-			/>
+			<div class="slide">
+				<img
+					class="fit"
+					src={image}
+					alt="{entry.title}, image {index + 1}"
+					{@attach fitImage}
+					onerror={(event) => {
+						if (event.currentTarget instanceof HTMLImageElement) event.currentTarget.hidden = true;
+					}}
+				/>
+			</div>
 		{/each}
 	</section>
+	{#if entry.images.length > 1}
+		<div class="dots" aria-hidden="true">
+			{#each entry.images as image, index (image + index)}
+				<span class:on={index === slide}></span>
+			{/each}
+		</div>
+	{/if}
 </article>
 
 <style>
@@ -280,33 +309,86 @@
 		max-height: 100cqh;
 	}
 
-	@media (max-width: 900px) {
+	.slide {
+		display: contents; /* a carousel cell on mobile only */
+	}
+
+	.dots {
+		display: none;
+	}
+
+	@media (max-width: 800px) {
 		.page {
-			grid-template-columns: 1fr;
-			grid-template-rows: none;
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
 			height: auto;
 			overflow: visible;
 			contain: none;
-			padding-bottom: 80px;
+			padding-bottom: 64px;
 		}
 
-		.meta {
-			border-right: 0;
-			padding: 32px 0;
-			overflow: visible;
+		.side-panel {
+			display: contents; /* drops the rules; its children join the page column */
+		}
+
+		.crumb {
+			order: -2;
+			margin: 12px 0 16px;
 		}
 
 		.gallery {
+			order: -1;
+			align-self: stretch;
+			flex-direction: row;
+			justify-content: flex-start;
+			gap: 0;
+			margin: 0 calc(-1 * var(--page-gutter)) 24px; /* swipes edge to edge */
 			padding: 0;
-			overflow: visible;
+			border-right: 0;
+			overflow: auto hidden;
+			scroll-snap-type: x mandatory;
 			container-type: normal;
 		}
 
-		.gallery img {
-			width: 100%;
-			max-height: none;
-			height: auto;
-			align-self: stretch;
+		.slide {
+			display: flex;
+			flex: 0 0 100%;
+			align-items: center;
+			justify-content: center;
+			padding-inline: var(--page-gutter);
+			scroll-snap-align: start;
+			scroll-snap-stop: always; /* one image per swipe */
+		}
+
+		.gallery img,
+		.gallery img.fit {
+			width: auto;
+			max-width: 100%;
+			max-height: 70svh;
+		}
+
+		.dots {
+			order: -1;
+			align-self: center;
+			display: flex;
+			gap: 8px;
+			margin: -8px 0 24px;
+		}
+
+		.dots span {
+			width: 7px;
+			height: 7px;
+			border: var(--border-width) solid var(--color-ink);
+			border-radius: 50%;
+		}
+
+		.dots .on {
+			background: var(--color-ink);
+		}
+
+		dd {
+			max-width: none;
 		}
 	}
 </style>

@@ -12,13 +12,17 @@
 
 <label class="row list-sans">
 	<span class="box">
-		<input type="checkbox" {checked} onchange={(event) => onchange?.(event.currentTarget.checked)} />
+		<input
+			type="checkbox"
+			{checked}
+			onchange={(event) => onchange?.(event.currentTarget.checked)}
+		/>
 		<!-- Material Symbols: check, traced as a centerline so the stroke matches the border -->
 		<svg class="tick" viewBox="0 0 24 24" aria-hidden="true">
 			<polyline points="4.56 11.59 9.55 16.58 19.44 6.69" />
 		</svg>
 	</span>
-	<span class='label'>{label}</span>
+	<span class="label">{label}</span>
 </label>
 
 <style>
@@ -75,5 +79,12 @@
 		stroke: var(--color-ink);
 		stroke-width: var(--box-stroke);
 		vector-effect: non-scaling-stroke; /* keeps the stroke in real pixels */
+	}
+
+	@media (max-width: 800px) {
+		.row {
+			min-height: 40px; /* finger-sized row */
+			font-size: 16px;
+		}
 	}
 </style>

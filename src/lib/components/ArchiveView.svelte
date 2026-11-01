@@ -11,7 +11,8 @@
 		facets,
 		query,
 		gridLabel,
-		empty
+		empty,
+		footer
 	}: {
 		title: string;
 		lede?: string;
@@ -20,6 +21,7 @@
 		query: EntryQuery;
 		gridLabel: string;
 		empty?: Snippet;
+		footer?: Snippet; // after the cards, e.g. load more
 	} = $props();
 
 	const queryKey = $derived(JSON.stringify(query));
@@ -51,6 +53,7 @@
 			{#if !entries.length && empty}
 				<p class="empty">{@render empty()}</p>
 			{/if}
+			{@render footer?.()}
 		</section>
 	{/key}
 </main>
@@ -68,6 +71,7 @@
 		display: grid;
 		grid-template-columns: var(--filter-width) minmax(0, 1fr);
 		grid-template-rows: minmax(0, 1fr);
+		/* gap: 35px; */
 		padding: var(--page-margin);
 		max-width: var(--page-max);
 		margin: 0 auto;
@@ -109,9 +113,9 @@
 	.lede {
 		font-family: var(--font-sans);
 		color: var(--color-muted);
-		font-size: 13px;
+		font-size: 14px;
 		font-weight: 200;
-		font-stretch: 80%;
+		font-stretch: 83%;
 	}
 
 	.grid {
@@ -141,17 +145,39 @@
 
 	@media (max-width: 800px) {
 		.page {
-			grid-template-columns: 1fr;
-			grid-template-rows: none;
-			padding-top: 48px;
+			display: block;
 			height: auto;
 			overflow: visible;
 			contain: none;
 		}
 
-		.rail,
+		.rail {
+			display: contents; /* drops the side rules; filters join the page flow */
+		}
+
+		.kicker {
+			margin-bottom: 0;
+			padding: 15px 0 15px;
+			border-bottom: var(--border-width) solid var(--color-ink);
+		}
+		.the {
+			font-size: 18px;
+		}
+		h1 {
+			font-size: 62px;
+		}
+		h1.favorites {
+			font-size: 58px;
+		}
+
 		.grid {
-			grid-template-columns: 1fr;
+			grid-template-columns: repeat(
+				auto-fill,
+				minmax(280px, 1fr)
+			); /* 1 column on phones, 2 on tablets */
+			gap: 28px 16px;
+			padding: 20px 0 48px;
+			border-right: 0;
 			overflow: visible;
 		}
 	}

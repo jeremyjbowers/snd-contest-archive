@@ -4,6 +4,7 @@
 	import type { ResolvedPathname } from '$app/types';
 	import { SPECIAL_FILTERS, type EntryQuery, type Facets } from '$lib/catalog/types';
 	import { setOrDelete, toggleListParam, type ListParam } from '$lib/catalog/url';
+	import { isMobile } from '$lib/viewport';
 	import { slide } from 'svelte/transition';
 	import PlusMinus from '../Icons/PlusMinus.svelte';
 	import FilterSection from './FilterSection.svelte';
@@ -95,164 +96,194 @@
 		clear: () => void,
 		commit: () => void
 	)}
-		<section class="search-block">
-			<span class="submenu-title">{label}</span>
-			<div class="field">
-				<input
-					type="text"
-					{value}
-					{placeholder}
-					aria-label={label}
-					oninput={(event) => set(event.currentTarget.value)}
-					onkeydown={(event) => event.key === 'Enter' && commit()}
-					onblur={(event) => {
-						if (leavingToClear(event, param)) return;
-						commit();
+		<div class="field">
+			<input
+				type="text"
+				{value}
+				{placeholder}
+				aria-label={label}
+				enterkeyhint="search"
+				oninput={(event) => set(event.currentTarget.value)}
+				onkeydown={(event) => event.key === 'Enter' && commit()}
+				onblur={(event) => {
+					if (leavingToClear(event, param)) return;
+					commit();
+				}}
+			/>
+			{#if value}
+				<button
+					class="clear"
+					type="button"
+					data-clear={param}
+					aria-label={clearLabel}
+					onpointerdown={(event) => {
+						event.preventDefault();
+						clear();
 					}}
-				/>
-				{#if value}
-					<button
-						class="clear"
-						type="button"
-						data-clear={param}
-						aria-label={clearLabel}
-						onpointerdown={(event) => {
-							event.preventDefault();
-							clear();
-						}}
-						onclick={clear}
-					>
-						clear
-					</button>
-				{/if}
-			</div>
-		</section>
+					onclick={clear}
+				>
+					clear
+				</button>
+			{/if}
+		</div>
 	{/snippet}
 
-	{@render queryField(
-		'Search for...',
-		'Front pages',
-		search,
-		'q',
-		'Clear search',
-		(next) => (search = next),
-		clearSearch,
-		commitSearch
-	)}
+	{#snippet personField()}
+		{@render queryField(
+			'Person',
+			'Search for an individual',
+			person,
+			'person',
+			'Clear person',
+			(next) => (person = next),
+			clearPerson,
+			commitPerson
+		)}
+	{/snippet}
 
-	<FilterSection title="design discipline">
-		<OptionList
-			items={facets.disciplines}
-			selected={query.disciplines}
-			onselect={(value) => toggle('discipline', value)}
-		/>
-	</FilterSection>
+	{#snippet searchField()}
+		{@render queryField(
+			'Search for...',
+			'Front pages',
+			search,
+			'q',
+			'Clear search',
+			(next) => (search = next),
+			clearSearch,
+			commitSearch
+		)}
+	{/snippet}
 
-	<FilterSection title="Award">
-		<OptionList
-			items={facets.awards}
-			selected={query.awards}
-			onselect={(value) => toggle('award', value)}
-		/>
-	</FilterSection>
+	<div class="pills">
+		{#if isMobile.current}
+			<FilterSection title="Search" count={query.q ? 1 : 0}>
+				{@render searchField()}
+			</FilterSection>
+		{:else}
+			<section class="search-block">
+				<span class="submenu-title">Search for...</span>
+				{@render searchField()}
+			</section>
+		{/if}
 
-	<FilterSection title="Platform">
-		<OptionList
-			items={facets.platforms}
-			selected={query.platforms}
-			onselect={(value) => toggle('platform', value)}
-		/>
-	</FilterSection>
+		<FilterSection title="design discipline" count={query.disciplines.length}>
+			<OptionList
+				items={facets.disciplines}
+				selected={query.disciplines}
+				onselect={(value) => toggle('discipline', value)}
+			/>
+		</FilterSection>
 
-	<FilterSection title="Years" startsOpen={false}>
-		<YearRange
-			min={facets.yearMin}
-			max={facets.yearMax}
-			bind:low={yearMin}
-			bind:high={yearMax}
-			oncommit={commitYears}
-		/>
-	</FilterSection>
+		<FilterSection title="Award" count={query.awards.length}>
+			<OptionList
+				items={facets.awards}
+				selected={query.awards}
+				onselect={(value) => toggle('award', value)}
+			/>
+		</FilterSection>
 
-	{#if extraOpen}
-		<div class="extra" transition:slide={{ duration: SLIDE_MS }}>
-			<FilterSection title="Organization" startsOpen={false}>
-				{#snippet before()}
-					<input
-						class="nested-search"
-						type="text"
-						bind:value={orgSearch}
-						placeholder="Search for an organization"
+		<FilterSection title="Platform" count={query.platforms.length}>
+			<OptionList
+				items={facets.platforms}
+				selected={query.platforms}
+				onselect={(value) => toggle('platform', value)}
+			/>
+		</FilterSection>
+
+		<FilterSection
+			title="Years"
+			startsOpen={false}
+			count={query.yearMin == null && query.yearMax == null ? 0 : 1}
+		>
+			<YearRange
+				min={facets.yearMin}
+				max={facets.yearMax}
+				bind:low={yearMin}
+				bind:high={yearMax}
+				oncommit={commitYears}
+			/>
+		</FilterSection>
+
+		{#if extraOpen || isMobile.current}
+			<div class="extra" transition:slide={{ duration: SLIDE_MS }}>
+				<FilterSection title="Organization" startsOpen={false} count={query.organizations.length}>
+					{#snippet before()}
+						<input
+							class="nested-search"
+							type="text"
+							bind:value={orgSearch}
+							placeholder="Search for an organization"
+						/>
+					{/snippet}
+					<OptionList
+						items={organizations}
+						sourceCount={facets.organizations.length}
+						filter={orgSearch}
+						pinChecked
+						selected={query.organizations}
+						onselect={(value) => toggle('org', value)}
 					/>
-				{/snippet}
-				<OptionList
-					items={organizations}
-					sourceCount={facets.organizations.length}
-					filter={orgSearch}
-					pinChecked
-					selected={query.organizations}
-					onselect={(value) => toggle('org', value)}
-				/>
-			</FilterSection>
+				</FilterSection>
 
-			<FilterSection title="topic" startsOpen={false}>
-				{#snippet before()}
-					<input
-						class="nested-search"
-						type="text"
-						bind:value={topicSearch}
-						placeholder="Search for a topic"
+				<FilterSection title="topic" startsOpen={false} count={query.topics.length}>
+					{#snippet before()}
+						<input
+							class="nested-search"
+							type="text"
+							bind:value={topicSearch}
+							placeholder="Search for a topic"
+						/>
+					{/snippet}
+					<OptionList
+						items={topics}
+						sourceCount={facets.topics.length}
+						filter={topicSearch}
+						pinChecked
+						selected={query.topics}
+						onselect={(value) => toggle('topic', value)}
 					/>
-				{/snippet}
-				<OptionList
-					items={topics}
-					sourceCount={facets.topics.length}
-					filter={topicSearch}
-					pinChecked
-					selected={query.topics}
-					onselect={(value) => toggle('topic', value)}
-				/>
-			</FilterSection>
+				</FilterSection>
 
-			<FilterSection title="Category" startsOpen={false}>
-				{#snippet before()}
-					<input
-						class="nested-search"
-						type="text"
-						bind:value={categorySearch}
-						placeholder="Search for a category"
+				<FilterSection title="Category" startsOpen={false} count={query.categories.length}>
+					{#snippet before()}
+						<input
+							class="nested-search"
+							type="text"
+							bind:value={categorySearch}
+							placeholder="Search for a category"
+						/>
+					{/snippet}
+					<OptionList
+						items={categories}
+						sourceCount={facets.categories.length}
+						filter={categorySearch}
+						pinChecked
+						selected={query.categories}
+						onselect={(value) => toggle('category', value)}
 					/>
-				{/snippet}
-				<OptionList
-					items={categories}
-					sourceCount={facets.categories.length}
-					filter={categorySearch}
-					pinChecked
-					selected={query.categories}
-					onselect={(value) => toggle('category', value)}
-				/>
-			</FilterSection>
+				</FilterSection>
 
-			<FilterSection title="special category" startsOpen={false}>
-				<OptionList
-					items={[...SPECIAL_FILTERS]}
-					selected={query.special}
-					onselect={(value) => toggle('special', value)}
-				/>
-			</FilterSection>
+				<FilterSection title="special category" startsOpen={false} count={query.special.length}>
+					<OptionList
+						items={[...SPECIAL_FILTERS]}
+						selected={query.special}
+						onselect={(value) => toggle('special', value)}
+					/>
+				</FilterSection>
 
-			{@render queryField(
-				'Person',
-				'Search for an individual',
-				person,
-				'person',
-				'Clear person',
-				(next) => (person = next),
-				clearPerson,
-				commitPerson
-			)}
-		</div>
-	{/if}
+				{#if isMobile.current}
+					<FilterSection title="Person" count={query.person ? 1 : 0}>
+						{@render personField()}
+					</FilterSection>
+				{:else}
+					<section class="search-block">
+						<span class="submenu-title">Person</span>
+						{@render personField()}
+					</section>
+				{/if}
+			</div>
+		{/if}
+	</div>
 
 	<button class="minimal slug" type="button" onclick={() => (extraOpen = !extraOpen)}>
 		{extraOpen ? 'hide advanced filters' : 'advanced filters'}
@@ -262,6 +293,7 @@
 
 <style>
 	.panel {
+		--field: 32px; /* text input height */
 		width: 100%;
 		flex: none;
 		padding-bottom: 48px;
@@ -287,7 +319,7 @@
 	input:not([type]),
 	.nested-search {
 		width: 100%;
-		height: 32px;
+		height: var(--field);
 		border: var(--border-width) solid var(--color-ink);
 		background: var(--color-input);
 		padding: 0 8px;
@@ -311,7 +343,7 @@
 		position: absolute;
 		top: var(--border-width);
 		right: var(--border-width);
-		height: calc(32px - 2 * var(--border-width));
+		height: calc(var(--field) - 2 * var(--border-width));
 		padding: 0 8px;
 		color: var(--color-faint);
 		font-size: 14px;
@@ -330,5 +362,47 @@
 		border-top: var(--border-width) solid var(--color-ink);
 		padding: 18px 18px 18px var(--filter-inset);
 		color: var(--color-muted);
+	}
+
+	@media (max-width: 800px) {
+		.panel {
+			--field: 40px;
+			display: contents; /* lets .pills stick for the whole page, not just the rail */
+		}
+
+		.search-block {
+			display: none; /* server render, before the Search pill takes over */
+		}
+
+		.pills {
+			position: sticky;
+			top: calc(var(--header-height) + var(--border-width));
+			z-index: 10;
+			display: flex;
+			gap: 8px;
+			margin-inline: calc(-1 * var(--page-gutter)); /* scrolls to the screen edge */
+			padding: 12px var(--page-gutter) calc(12px + var(--border-width));
+			overflow-x: auto;
+			scrollbar-width: none;
+			background:
+				linear-gradient(var(--color-ink), var(--color-ink)) center bottom /
+					calc(100% - 2 * var(--page-gutter)) var(--border-width) no-repeat,
+				var(--color-bg); /* bottom rule inset to the gutter; stays put while pills scroll */
+		}
+
+		.extra {
+			display: contents;
+		}
+
+		input[type='text'],
+		input:not([type]),
+		.nested-search,
+		.clear {
+			font-size: 16px; /* iOS Safari zooms into inputs under 16px */
+		}
+
+		.minimal {
+			display: none;
+		}
 	}
 </style>

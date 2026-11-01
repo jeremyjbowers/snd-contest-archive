@@ -4,9 +4,9 @@
 	--color-paper: #fffffe;
 	--color-ink: #232323;
 	--color-muted: hsl(28, 10%, 45%);
-	--color-faint: #B1A8A0;
+	--color-faint: #b1a8a0;
 	--color-accent: #1ba098;
-	--color-pop: #EE624E;
+	--color-pop: #ee624e;
 	--color-chip: #e5e0dc;
 	--color-input: var(--color-paper);
 	--color-award: #d9d9d9;
@@ -34,6 +34,13 @@
 	--color-input: #241f1c;
 	--color-award: #5c5852;
 	--shadow-menu: 0 12px 40px rgb(0 0 0 / 0.4);
+}
+
+@media (max-width: 800px) {
+	:root {
+		--page-gutter: 16px;
+		--filter-inset: 0px;
+	}
 }
 
 @font-face {

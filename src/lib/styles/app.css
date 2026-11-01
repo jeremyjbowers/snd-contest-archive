@@ -17,6 +17,8 @@ body {
 	font-feature-settings:
 		'lnum' 1,
 		'pnum' 1;
+	-webkit-text-size-adjust: 100%; /* iOS enlarges text in landscape otherwise */
+	text-size-adjust: 100%;
 }
 
 body {

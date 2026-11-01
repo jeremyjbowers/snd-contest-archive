@@ -32,7 +32,7 @@
 
 <svelte:head>
 	<link class="logo" rel="icon" href="/assets/logo.png" />
-	<title>the Archive — SND</title>
+	<title>SND Archive</title>
 </svelte:head>
 
 <div class:keyboard>

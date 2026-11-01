@@ -123,7 +123,7 @@
 		<nav class="right">
 			{#if page.url.pathname === '/favorites'}
 				<a class="nav-link" href="{resolve('/')}{archiveHref().slice(1)}" style:--icon="{CARETS}px">
-					Back to the archive
+					<span><span class="long">Back to the </span>archive</span>
 					<span class="icon carets">
 						<Caret size={CARET} />
 						<Caret size={CARET} />
@@ -365,6 +365,12 @@
 	@media (max-width: 900px) {
 		.theme {
 			left: var(--page-gutter);
+		}
+	}
+
+	@media (max-width: 800px) {
+		.long {
+			display: none; /* full label runs into the logo */
 		}
 	}
 </style>

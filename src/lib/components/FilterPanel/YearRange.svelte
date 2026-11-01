@@ -169,6 +169,14 @@
 		cursor: grabbing;
 	}
 
+	@media (max-width: 800px) {
+		.knob::before {
+			content: '';
+			position: absolute;
+			inset: -15px; /* invisible touch area around the 11px knob */
+		}
+	}
+
 	.year {
 		position: absolute;
 		top: 16px;

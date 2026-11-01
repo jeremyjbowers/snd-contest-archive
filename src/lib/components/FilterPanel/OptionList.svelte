@@ -131,4 +131,14 @@
 	.more:disabled {
 		opacity: 1;
 	}
+
+	@media (max-width: 800px) {
+		.options {
+			gap: 0; /* rows are tall enough on their own */
+		}
+
+		.more {
+			padding-block: 10px;
+		}
+	}
 </style>

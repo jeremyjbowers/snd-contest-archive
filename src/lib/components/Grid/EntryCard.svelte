@@ -2,6 +2,7 @@
 	import type { EntrySummary } from '$lib/catalog/types';
 	import { isFavorite, toggleFavorite } from '$lib/favorites.svelte';
 	import { resolve } from '$app/paths';
+	import { isMobile } from '$lib/viewport';
 	import Heart from '../Icons/Heart.svelte';
 	import AwardFlag from './AwardFlag.svelte';
 
@@ -28,7 +29,7 @@
 </script>
 
 <article class="card">
-	<a class="body" {href} target="_blank" rel="noopener noreferrer">
+	<a class="body" {href} target={isMobile.current ? undefined : '_blank'} rel="noopener noreferrer">
 		<span class="media">
 			{#if entry.thumbnail}
 				<img
@@ -174,6 +175,17 @@
 	@media (prefers-reduced-motion: reduce) {
 		.clip span {
 			transition: none;
+		}
+	}
+
+	@media (max-width: 800px) {
+		.heart {
+			top: 12px;
+			right: 12px;
+			width: 40px; /* same icon spot, bigger tap target */
+			height: 40px;
+			display: grid;
+			place-items: center;
 		}
 	}
 </style>
