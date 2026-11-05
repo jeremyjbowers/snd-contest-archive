@@ -57,13 +57,26 @@
 			oninput={(event) => (q = event.currentTarget.value)}
 		/>
 	</label>
-	<div class="scope" role="group" aria-label="Sort">
-		<button type="button" class:on={sort === 'count'} onclick={() => (sort = 'count')}>
-			By count
-		</button>
-		<button type="button" class:on={sort === 'name'} onclick={() => (sort = 'name')}>
-			By name
-		</button>
+	<div class="scope-wrap">
+		<span class="slug-mid">Sort</span>
+		<div class="scope" role="group" aria-label="Sort">
+			<button
+				type="button"
+				class:selected={sort === 'count'}
+				aria-pressed={sort === 'count'}
+				onclick={() => (sort = 'count')}
+			>
+				By count
+			</button>
+			<button
+				type="button"
+				class:selected={sort === 'name'}
+				aria-pressed={sort === 'name'}
+				onclick={() => (sort = 'name')}
+			>
+				By name
+			</button>
+		</div>
 	</div>
 </form>
 
@@ -143,17 +156,28 @@
 		min-width: 240px;
 	}
 
+	.scope-wrap {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+
 	.scope {
 		display: flex;
+	}
+
+	.scope button {
+		color: var(--color-muted);
+		font-weight: 400;
 	}
 
 	.scope button:first-child {
 		border-right: 0;
 	}
 
-	.on {
-		background: var(--color-ink);
-		color: var(--color-bg);
+	.scope button.selected {
+		color: var(--color-ink);
+		font-weight: 600;
 	}
 
 	.tally {

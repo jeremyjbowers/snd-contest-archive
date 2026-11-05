@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { formatSourceLabel } from '$lib/admin/sourceLabel';
 
 	let { data } = $props();
 
@@ -76,7 +77,7 @@
 	<ul class="sheets">
 		{#each data.sources as source (source.source)}
 			<li>
-				<span>{source.source}</span>
+				<span>{formatSourceLabel(source.source, source.years)}</span>
 				<span>{number.format(source.entries)}</span>
 			</li>
 		{/each}

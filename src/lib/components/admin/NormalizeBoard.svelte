@@ -1,5 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import {
+		categoryDrafts,
+		categoryDraftVocabulary,
+		downloadMappingCsv,
+		initCategoryDrafts,
+		mappingProgress
+	} from '$lib/admin/categoryDrafts.svelte';
+	import { formatSourceLabel, yearsBySource } from '$lib/admin/sourceLabel';
+	import CategoryMappingEditor from './CategoryMappingEditor.svelte';
 
 	type Line = { label: string; value: string };
 
@@ -24,34 +33,80 @@
 		rows,
 		groupBy,
 		title,
-		lede
+		lede,
+		mapping = false
 	}: {
 		rows: Row[];
 		groupBy: 'outCategory' | 'outTopic';
 		title: string;
 		lede: string;
+		mapping?: boolean;
 	} = $props();
+
+	$effect(() => {
+		if (mapping) initCategoryDrafts();
+	});
 
 	const number = new Intl.NumberFormat('en-US');
 	const initial = page.url.searchParams;
 	let q = $state(initial.get('q') ?? '');
 	let source = $state(initial.get('source') ?? '');
-	let year = $state(initial.get('year') ?? '');
 	let scope = $state(initial.get('scope') === 'all' ? 'all' : 'review');
-
-	const sources = $derived([...new Set(rows.map((row) => row.source))].sort());
-	const years = $derived(
-		[...new Set(rows.map((row) => row.year).filter((value) => value != null))].sort(
-			(a, b) => Number(a) - Number(b)
-		)
+	const mappedParam = initial.get('mapped');
+	let mapped = $state<'todo' | 'done' | 'all'>(
+		mappedParam === 'done' || mappedParam === 'all' ? mappedParam : 'todo'
 	);
+
+	const drafts = $derived(categoryDrafts());
+	const vocabulary = $derived(categoryDraftVocabulary());
+	const progress = $derived(mapping ? mappingProgress(rows.map((row) => row.key)) : null);
+
+	const sheetYears = $derived(yearsBySource(rows));
+	const sourceOptions = $derived.by(() => {
+		const names = [...new Set(rows.map((row) => row.source))];
+		return names
+			.map((name) => ({
+				name,
+				label: formatSourceLabel(name, sheetYears.get(name) ?? [])
+			}))
+			.sort((a, b) => {
+				const ya = sheetYears.get(a.name)?.[0] ?? 9999;
+				const yb = sheetYears.get(b.name)?.[0] ?? 9999;
+				return ya - yb || a.label.localeCompare(b.label);
+			});
+	});
+
+	function rowSheetLabel(row: Row): string {
+		const years = row.year == null ? (sheetYears.get(row.source) ?? []) : [row.year];
+		const label = formatSourceLabel(row.source, years);
+		if (row.year == null) return label;
+		if (label.includes(`(${row.year})`) && !label.includes('–')) return label;
+		return `${label} · ${row.year}`;
+	}
+
+	function archiveLines(row: Row): Line[] {
+		const lines: Line[] = [{ label: 'Category', value: row.outCategory }];
+		if (row.outSubcategory) lines.push({ label: 'Subcategory', value: row.outSubcategory });
+		lines.push({ label: 'Topic', value: row.outTopic ?? '—' });
+		lines.push(
+			{ label: 'Discipline', value: row.outDiscipline },
+			{ label: 'Platform', value: row.outPlatform }
+		);
+		if (row.student) lines.push({ label: 'Student', value: 'Yes' });
+		if (row.nonEditorial) lines.push({ label: 'Non-editorial', value: 'Yes' });
+		return lines;
+	}
 
 	const filtered = $derived.by(() => {
 		const query = q.trim().toLowerCase();
 		return rows.filter((row) => {
 			if (scope === 'review' && !row.review) return false;
 			if (source && row.source !== source) return false;
-			if (year && String(row.year ?? '') !== year) return false;
+			if (mapping) {
+				const done = drafts[row.key]?.done ?? false;
+				if (mapped === 'todo' && done) return false;
+				if (mapped === 'done' && !done) return false;
+			}
 			if (!query) return true;
 			const blob = [
 				row.source,
@@ -118,38 +173,74 @@
 			onchange={(event) => (source = event.currentTarget.value)}
 		>
 			<option value="">All sheets</option>
-			{#each sources as name (name)}
-				<option value={name}>{name}</option>
+			{#each sourceOptions as option (option.name)}
+				<option value={option.name}>{option.label}</option>
 			{/each}
 		</select>
 	</label>
-	<label for="admin-year">
-		<span class="slug-mid">Year</span>
-		<select
-			id="admin-year"
-			name="year"
-			value={year}
-			onchange={(event) => (year = event.currentTarget.value)}
-		>
-			<option value="">All years</option>
-			{#each years as value (value)}
-				<option value={String(value)}>{value}</option>
-			{/each}
-		</select>
-	</label>
-	<div class="scope" role="group" aria-label="Which rows to show">
-		<button type="button" class:on={scope === 'review'} onclick={() => (scope = 'review')}>
-			Needs a decision
-		</button>
-		<button type="button" class:on={scope === 'all'} onclick={() => (scope = 'all')}>
-			Every value
-		</button>
+	<div class="scope-wrap">
+		<span class="slug-mid">Show</span>
+		<div class="scope" role="group" aria-label="Which rows to show">
+			<button
+				type="button"
+				class:selected={scope === 'review'}
+				aria-pressed={scope === 'review'}
+				onclick={() => (scope = 'review')}
+			>
+				Needs a decision
+			</button>
+			<button
+				type="button"
+				class:selected={scope === 'all'}
+				aria-pressed={scope === 'all'}
+				onclick={() => (scope = 'all')}
+			>
+				Every value
+			</button>
+		</div>
 	</div>
+	{#if mapping}
+		<div class="scope-wrap">
+			<span class="slug-mid">Mapped</span>
+			<div class="scope" role="group" aria-label="Mapping progress filter">
+				<button
+					type="button"
+					class:selected={mapped === 'todo'}
+					aria-pressed={mapped === 'todo'}
+					onclick={() => (mapped = 'todo')}
+				>
+					Still to do
+				</button>
+				<button
+					type="button"
+					class:selected={mapped === 'done'}
+					aria-pressed={mapped === 'done'}
+					onclick={() => (mapped = 'done')}
+				>
+					Done
+				</button>
+				<button
+					type="button"
+					class:selected={mapped === 'all'}
+					aria-pressed={mapped === 'all'}
+					onclick={() => (mapped = 'all')}
+				>
+					All
+				</button>
+			</div>
+		</div>
+		<button type="button" class="export" onclick={() => downloadMappingCsv(rows)}>
+			Download CSV
+		</button>
+	{/if}
 </form>
 
 <p class="tally">
 	{number.format(groups.length)} archive {groupBy === 'outCategory' ? 'categories' : 'topics'} ·
 	{number.format(filtered.length)} source combinations · {number.format(shownEntries)} entries
+	{#if progress}
+		· {number.format(progress.done)} of {number.format(progress.total)} blocks marked done
+	{/if}
 </p>
 
 {#if groups.length === 0}
@@ -164,39 +255,70 @@
 				</header>
 				<ul>
 					{#each group.rows as row (row.key)}
-						<li>
+						<li class:row-done={mapping && (drafts[row.key]?.done ?? false)}>
 							<div class="meta">
 								<p class="count">{number.format(row.count)}</p>
-								<p>{row.source}{row.year ? ` · ${row.year}` : ''}</p>
+								<p>{rowSheetLabel(row)}</p>
+								{#if mapping && (drafts[row.key]?.done ?? false)}
+									<p class="mapped-flag slug-mid">Done</p>
+								{/if}
 							</div>
-							<dl>
-								{#each row.lines as line (`${line.label}-${line.value}`)}
-									<div>
-										<dt>{line.label}</dt>
-										<dd>{line.value}</dd>
+							<div class="row-panels" class:three-col={mapping}>
+								<div class="panel">
+									<p class="block-label slug-mid">Sheet</p>
+									{#if row.lines.length}
+										<dl class="fields sheet-fields">
+											{#each row.lines as line (`sheet-${line.label}-${line.value}`)}
+												<div>
+													<dt>{line.label}</dt>
+													<dd>{line.value}</dd>
+												</div>
+											{/each}
+										</dl>
+									{/if}
+								</div>
+								<div class="panel">
+									<p class="block-label slug-mid">Archive</p>
+									<dl class="fields archive-fields">
+										{#each archiveLines(row) as line (`archive-${line.label}-${line.value}`)}
+											<div>
+												<dt>{line.label}</dt>
+												<dd>{line.value}</dd>
+											</div>
+										{/each}
+									</dl>
+								</div>
+								{#if mapping}
+									<div class="panel">
+										<p class="block-label slug-mid">Target</p>
+										<CategoryMappingEditor rowKey={row.key} lines={row.lines} />
 									</div>
-								{/each}
-							</dl>
-							<p class="mapped">
-								{row.outCategory}
-								{#if row.outSubcategory}· {row.outSubcategory}{/if}
-								· {row.outTopic || 'no topic'} · {row.outDiscipline} · {row.outPlatform}
-								{#if row.student}· Student{/if}
-								{#if row.nonEditorial}· Non-editorial{/if}
-							</p>
-							{#if row.attention.length}
-								<ul class="notes">
-									{#each row.attention as reason (reason)}
-										<li>{reason}</li>
-									{/each}
-								</ul>
-							{/if}
+								{/if}
+							</div>
 						</li>
 					{/each}
 				</ul>
 			</section>
 		{/each}
 	</div>
+{/if}
+
+{#if mapping}
+	<datalist id="snd-mapping-categories">
+		{#each vocabulary.categories as value (value)}
+			<option {value}></option>
+		{/each}
+	</datalist>
+	<datalist id="snd-mapping-subcategories">
+		{#each vocabulary.subcategories as value (value)}
+			<option {value}></option>
+		{/each}
+	</datalist>
+	<datalist id="snd-mapping-topics">
+		{#each vocabulary.topics as value (value)}
+			<option {value}></option>
+		{/each}
+	</datalist>
 {/if}
 
 <style>
@@ -239,21 +361,33 @@
 		min-width: 240px;
 	}
 
+	.scope-wrap {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+
 	.scope {
 		display: flex;
 	}
 
 	.scope button {
-		background: transparent;
+		color: var(--color-muted);
+		font-weight: 400;
 	}
 
 	.scope button:first-child {
 		border-right: 0;
 	}
 
-	.on {
-		background: var(--color-ink);
-		color: var(--color-bg);
+	.scope button.selected {
+		color: var(--color-ink);
+		font-weight: 600;
+	}
+
+	.export {
+		align-self: end;
+		background: transparent;
 	}
 
 	.tally,
@@ -298,8 +432,18 @@
 
 	.meta {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 16px;
 		align-items: baseline;
+	}
+
+	.mapped-flag {
+		margin: 0;
+		color: var(--color-muted);
+	}
+
+	li.row-done {
+		background: color-mix(in srgb, var(--color-chip) 35%, transparent);
 	}
 
 	.count {
@@ -307,17 +451,48 @@
 		font-weight: 500;
 	}
 
-	dl {
+	.row-panels {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-		gap: 8px 18px;
-		margin: 10px 0 0;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 20px 28px;
+		margin-top: 10px;
+		align-items: start;
 	}
 
-	dl div {
+	.row-panels.three-col {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+	}
+
+	.block-label {
+		margin: 0 0 8px;
+	}
+
+	.fields {
+		margin: 0;
+	}
+
+	.sheet-fields {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	.archive-fields {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 10px 16px;
+	}
+
+	.fields div {
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
+	}
+
+	@media (max-width: 720px) {
+		.row-panels {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	dt {
@@ -329,19 +504,5 @@
 
 	dd {
 		margin: 0;
-	}
-
-	.mapped {
-		margin-top: 10px;
-	}
-
-	.notes {
-		margin-top: 8px;
-		color: var(--color-pop);
-	}
-
-	.notes li {
-		padding: 0;
-		border: 0;
 	}
 </style>

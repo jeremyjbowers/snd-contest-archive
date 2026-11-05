@@ -7,6 +7,7 @@
 <NormalizeBoard
 	rows={data.rows}
 	groupBy="outCategory"
+	mapping
 	title="Category"
-	lede="Each block is a distinct way the sheets label a category, and the subject the archive stores for it today. “Needs a decision” is a code used as the category, a circulation band used as the category, an empty label, or one category text that lands in more than one archive category."
+	lede="Each block is one way the sheets label a category, and what the archive stores today. Use Target mapping to write the subject and format you want, Split on colon when the sheet used a single “Graphics: …” line, check Done when a block is settled, and Download CSV when you want to hand the list off. Drafts stay in this browser until you export them."
 />
