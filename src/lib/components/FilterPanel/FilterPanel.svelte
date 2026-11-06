@@ -17,7 +17,6 @@
 
 	// Local drafts; kept aligned when the URL (and thus `query`) changes.
 	let search = $derived(query.q ?? '');
-	let person = $derived(query.person ?? '');
 	let yearMin = $derived(query.yearMin ?? facets.yearMin);
 	let yearMax = $derived(query.yearMax ?? facets.yearMax);
 	let orgSearch = $state('');
@@ -53,25 +52,15 @@
 		navigate((params) => setOrDelete(params, 'q', search.trim() || undefined));
 	}
 
-	function commitPerson() {
-		navigate((params) => setOrDelete(params, 'person', person.trim() || undefined));
-	}
-
-	function leavingToClear(event: FocusEvent, param: 'q' | 'person') {
+	function leavingToClear(event: FocusEvent) {
 		const next = event.relatedTarget;
-		return next instanceof Element && next.getAttribute('data-clear') === param;
+		return next instanceof Element && next.getAttribute('data-clear') === 'q';
 	}
 
 	function clearSearch() {
 		if (!search) return;
 		search = '';
 		commitSearch();
-	}
-
-	function clearPerson() {
-		if (!person) return;
-		person = '';
-		commitPerson();
 	}
 
 	function commitYears() {
@@ -90,7 +79,7 @@
 		label: string,
 		placeholder: string,
 		value: string,
-		param: 'q' | 'person',
+		param: 'q',
 		clearLabel: string,
 		set: (next: string) => void,
 		clear: () => void,
@@ -106,7 +95,7 @@
 				oninput={(event) => set(event.currentTarget.value)}
 				onkeydown={(event) => event.key === 'Enter' && commit()}
 				onblur={(event) => {
-					if (leavingToClear(event, param)) return;
+					if (leavingToClear(event)) return;
 					commit();
 				}}
 			/>
@@ -126,19 +115,6 @@
 				</button>
 			{/if}
 		</div>
-	{/snippet}
-
-	{#snippet personField()}
-		{@render queryField(
-			'Person',
-			'Search for an individual',
-			person,
-			'person',
-			'Clear person',
-			(next) => (person = next),
-			clearPerson,
-			commitPerson
-		)}
 	{/snippet}
 
 	{#snippet searchField()}
@@ -270,17 +246,6 @@
 						onselect={(value) => toggle('special', value)}
 					/>
 				</FilterSection>
-
-				{#if isMobile.current}
-					<FilterSection title="Person" count={query.person ? 1 : 0}>
-						{@render personField()}
-					</FilterSection>
-				{:else}
-					<section class="search-block">
-						<span class="submenu-title">Person</span>
-						{@render personField()}
-					</section>
-				{/if}
 			</div>
 		{/if}
 	</div>
