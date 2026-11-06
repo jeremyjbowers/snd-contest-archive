@@ -52,6 +52,7 @@ function matchesAnyAward(selected: string[] | undefined, entry: Entry) {
 	return selected.some((award) => awards.includes(award));
 }
 
+/** Text the main search box matches. Category lines and credited names are included. */
 function blob(entry: Entry) {
 	return [
 		entry.title,
