@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { dev } from '$app/environment';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { cubicOut } from 'svelte/easing';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import { slide } from 'svelte/transition';
 	import { archiveHref } from '$lib/archive-return.svelte';
+	import { isLocked, toggleLockedPreview } from '$lib/locked.svelte';
 	import Burger from '../Icons/Burger.svelte';
 	import Caret from '../Icons/Caret.svelte';
 	import Heart from '../Icons/Heart.svelte';
@@ -143,6 +145,17 @@
 		new theme
 		<Icon name="shuffle" width={20} height={14} />
 	</button> -->
+	{#if dev}
+		<button
+			class="theme"
+			type="button"
+			aria-pressed={isLocked()}
+			title="Preview the logged-out archive. This control is only in local dev."
+			onclick={toggleLockedPreview}
+		>
+			{isLocked() ? 'locked view on' : 'locked view'}
+		</button>
+	{/if}
 </header>
 
 <style>
@@ -360,6 +373,11 @@
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		z-index: 5;
+	}
+
+	.theme[aria-pressed='true'] {
+		background: var(--color-ink);
+		color: var(--color-bg);
 	}
 
 	@media (max-width: 900px) {
