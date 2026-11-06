@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
+	import { browser, dev } from '$app/environment';
 	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import Header from '$lib/components/NavBar/Header.svelte';
 	import { initArchiveReturn, rememberArchive } from '$lib/archive-return.svelte';
 	import { initFavorites } from '$lib/favorites.svelte';
+	import { initLockedPreview, isLocked } from '$lib/locked.svelte';
 	import { initTheme } from '$lib/theme.svelte';
 	import '$lib/styles/app.css';
 
@@ -17,7 +18,10 @@
 		initTheme();
 	}
 
-	onMount(() => initArchiveReturn());
+	onMount(() => {
+		initArchiveReturn();
+		if (dev) initLockedPreview();
+	});
 
 	afterNavigate(() => {
 		if (page.url.pathname === '/') rememberArchive(page.url);
@@ -35,7 +39,7 @@
 	<title>SND Archive</title>
 </svelte:head>
 
-<div class:keyboard>
+<div class:keyboard class:locked={isLocked()}>
 	<Header />
 	{@render children()}
 </div>
