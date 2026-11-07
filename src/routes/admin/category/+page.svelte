@@ -9,5 +9,5 @@
 	groupBy="outCategory"
 	mapping
 	title="Category"
-	lede="Each block is one way the sheets label a category, and what the archive stores today. Use Target mapping to write the subject and format you want, Split on colon when the sheet used a single “Graphics: …” line, check Done when a block is settled, and Download CSV when you want to hand the list off. Drafts stay in this browser until you export them."
+	lede="Each block is one way the sheets label a category, and what the archive stores today. Use Target mapping to write the subject and format you want, Split on colon when the sheet used a single “Graphics: …” line, check Done when a block is settled, and Download CSV for a backup. If drafts disappear (another URL or cleared site data), use Import CSV to load an export back into this browser."
 />

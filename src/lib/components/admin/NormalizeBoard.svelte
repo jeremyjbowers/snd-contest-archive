@@ -4,6 +4,7 @@
 		categoryDrafts,
 		categoryDraftVocabulary,
 		downloadMappingCsv,
+		importCategoryDraftsCsv,
 		initCategoryDrafts,
 		mappingProgress
 	} from '$lib/admin/categoryDrafts.svelte';
@@ -51,7 +52,6 @@
 	const initial = page.url.searchParams;
 	let q = $state(initial.get('q') ?? '');
 	let source = $state(initial.get('source') ?? '');
-	let scope = $state(initial.get('scope') === 'all' ? 'all' : 'review');
 	const mappedParam = initial.get('mapped');
 	let mapped = $state<'todo' | 'done' | 'all'>(
 		mappedParam === 'done' || mappedParam === 'all' ? mappedParam : 'todo'
@@ -60,6 +60,25 @@
 	const drafts = $derived(categoryDrafts());
 	const vocabulary = $derived(categoryDraftVocabulary());
 	const progress = $derived(mapping ? mappingProgress(rows.map((row) => row.key)) : null);
+	let importNote = $state('');
+
+	function pickMappingCsv() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.csv,text/csv';
+		input.onchange = () => {
+			const file = input.files?.[0];
+			if (!file) return;
+			const reader = new FileReader();
+			reader.onload = () => {
+				const text = String(reader.result ?? '');
+				const count = importCategoryDraftsCsv(text);
+				importNote = `Loaded ${number.format(count)} mappings from ${file.name}.`;
+			};
+			reader.readAsText(file);
+		};
+		input.click();
+	}
 
 	const sheetYears = $derived(yearsBySource(rows));
 	const sourceOptions = $derived.by(() => {
@@ -99,13 +118,14 @@
 
 	const filtered = $derived.by(() => {
 		const query = q.trim().toLowerCase();
+		const draftStore = categoryDrafts();
+		const mappedFilter = mapped;
 		return rows.filter((row) => {
-			if (scope === 'review' && !row.review) return false;
 			if (source && row.source !== source) return false;
 			if (mapping) {
-				const done = drafts[row.key]?.done ?? false;
-				if (mapped === 'todo' && done) return false;
-				if (mapped === 'done' && !done) return false;
+				const done = draftStore[row.key]?.done ?? false;
+				if (mappedFilter === 'todo' && done) return false;
+				if (mappedFilter === 'done' && !done) return false;
 			}
 			if (!query) return true;
 			const blob = [
@@ -178,62 +198,30 @@
 			{/each}
 		</select>
 	</label>
-	<div class="scope-wrap">
-		<span class="slug-mid">Show</span>
-		<div class="scope" role="group" aria-label="Which rows to show">
-			<button
-				type="button"
-				class:selected={scope === 'review'}
-				aria-pressed={scope === 'review'}
-				onclick={() => (scope = 'review')}
-			>
-				Needs a decision
-			</button>
-			<button
-				type="button"
-				class:selected={scope === 'all'}
-				aria-pressed={scope === 'all'}
-				onclick={() => (scope = 'all')}
-			>
-				Every value
-			</button>
-		</div>
-	</div>
 	{#if mapping}
-		<div class="scope-wrap">
+		<label for="admin-mapped">
 			<span class="slug-mid">Mapped</span>
-			<div class="scope" role="group" aria-label="Mapping progress filter">
-				<button
-					type="button"
-					class:selected={mapped === 'todo'}
-					aria-pressed={mapped === 'todo'}
-					onclick={() => (mapped = 'todo')}
-				>
-					Still to do
-				</button>
-				<button
-					type="button"
-					class:selected={mapped === 'done'}
-					aria-pressed={mapped === 'done'}
-					onclick={() => (mapped = 'done')}
-				>
-					Done
-				</button>
-				<button
-					type="button"
-					class:selected={mapped === 'all'}
-					aria-pressed={mapped === 'all'}
-					onclick={() => (mapped = 'all')}
-				>
-					All
-				</button>
-			</div>
-		</div>
+			<select
+				id="admin-mapped"
+				name="mapped"
+				value={mapped}
+				onchange={(event) => (mapped = event.currentTarget.value as 'todo' | 'done' | 'all')}
+			>
+				<option value="todo">Still to do</option>
+				<option value="done">Done</option>
+				<option value="all">All</option>
+			</select>
+		</label>
 		<button type="button" class="export" onclick={() => downloadMappingCsv(rows)}>
 			Download CSV
 		</button>
+		<button type="button" class="export" onclick={pickMappingCsv}>Import CSV</button>
 	{/if}
 </form>
+
+{#if importNote}
+	<p class="import-note">{importNote}</p>
+{/if}
 
 <p class="tally">
 	{number.format(groups.length)} archive {groupBy === 'outCategory' ? 'categories' : 'topics'} ·
@@ -244,7 +232,7 @@
 </p>
 
 {#if groups.length === 0}
-	<p class="empty">Nothing matches. Clear the search or switch to every value.</p>
+	<p class="empty">Nothing matches. Clear the search or change the mapped filter.</p>
 {:else}
 	<div class="groups">
 		{#each groups as group (group.name)}
@@ -291,7 +279,11 @@
 								{#if mapping}
 									<div class="panel">
 										<p class="block-label slug-mid">Target</p>
-										<CategoryMappingEditor rowKey={row.key} lines={row.lines} />
+										<CategoryMappingEditor
+											rowKey={row.key}
+											lines={row.lines}
+											currentDiscipline={row.outDiscipline}
+										/>
 									</div>
 								{/if}
 							</div>
@@ -319,6 +311,11 @@
 			<option {value}></option>
 		{/each}
 	</datalist>
+	<datalist id="snd-mapping-disciplines">
+		{#each vocabulary.disciplines as value (value)}
+			<option {value}></option>
+		{/each}
+	</datalist>
 {/if}
 
 <style>
@@ -343,7 +340,7 @@
 		margin: 28px 0 12px;
 	}
 
-	label {
+	.filters label {
 		display: flex;
 		flex-direction: column;
 		gap: 6px;
@@ -361,33 +358,14 @@
 		min-width: 240px;
 	}
 
-	.scope-wrap {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-	}
-
-	.scope {
-		display: flex;
-	}
-
-	.scope button {
-		color: var(--color-muted);
-		font-weight: 400;
-	}
-
-	.scope button:first-child {
-		border-right: 0;
-	}
-
-	.scope button.selected {
-		color: var(--color-ink);
-		font-weight: 600;
-	}
-
 	.export {
 		align-self: end;
-		background: transparent;
+		background: var(--color-input);
+	}
+
+	.import-note {
+		margin: 0 0 8px;
+		color: var(--color-muted);
 	}
 
 	.tally,

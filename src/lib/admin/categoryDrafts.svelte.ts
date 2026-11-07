@@ -1,5 +1,7 @@
+import { CANONICAL_FACETS } from '$lib/catalog/types';
 import {
 	draftVocabulary,
+	draftsFromMappingCsv,
 	EMPTY_CATEGORY_DRAFT,
 	type CategoryDraft,
 	type DraftVocabulary,
@@ -36,7 +38,7 @@ export function categoryDrafts() {
 }
 
 export function categoryDraftVocabulary(): DraftVocabulary {
-	return draftVocabulary(drafts);
+	return draftVocabulary(drafts, CANONICAL_FACETS.disciplines);
 }
 
 export function draftFor(key: string): CategoryDraft {
@@ -81,4 +83,15 @@ export function downloadMappingCsv(
 	link.download = filename;
 	link.click();
 	URL.revokeObjectURL(url);
+}
+
+export function mergeCategoryDrafts(incoming: Record<string, CategoryDraft>) {
+	initCategoryDrafts();
+	drafts = { ...drafts, ...incoming };
+	persist();
+	return Object.keys(incoming).length;
+}
+
+export function importCategoryDraftsCsv(text: string) {
+	return mergeCategoryDrafts(draftsFromMappingCsv(text));
 }

@@ -1,7 +1,10 @@
+import { parseCsv } from '$lib/catalog/parse-csv';
+
 export type CategoryDraft = {
 	category: string;
 	subcategory: string;
 	topic: string;
+	discipline: string;
 	done: boolean;
 };
 
@@ -9,6 +12,7 @@ export const EMPTY_CATEGORY_DRAFT: CategoryDraft = {
 	category: '',
 	subcategory: '',
 	topic: '',
+	discipline: '',
 	done: false
 };
 
@@ -58,6 +62,7 @@ export type MappingExportRow = {
 	proposed_category: string;
 	proposed_subcategory: string;
 	proposed_topic: string;
+	proposed_discipline: string;
 };
 
 function lineValue(lines: SheetLine[], label: string): string {
@@ -99,8 +104,14 @@ export function mappingExportRow(
 		current_platform: row.outPlatform,
 		proposed_category: draft.category,
 		proposed_subcategory: draft.subcategory,
-		proposed_topic: draft.topic
+		proposed_topic: draft.topic,
+		proposed_discipline: proposedDiscipline(draft, row.outDiscipline)
 	};
+}
+
+export function proposedDiscipline(draft: CategoryDraft, current: string): string {
+	const value = draft.discipline.trim();
+	return value || current;
 }
 
 const CSV_COLUMNS: (keyof MappingExportRow)[] = [
@@ -123,7 +134,8 @@ const CSV_COLUMNS: (keyof MappingExportRow)[] = [
 	'current_platform',
 	'proposed_category',
 	'proposed_subcategory',
-	'proposed_topic'
+	'proposed_topic',
+	'proposed_discipline'
 ];
 
 function csvCell(value: string | boolean | number): string {
@@ -142,21 +154,59 @@ export type DraftVocabulary = {
 	categories: string[];
 	subcategories: string[];
 	topics: string[];
+	disciplines: string[];
 };
 
-export function draftVocabulary(drafts: Record<string, CategoryDraft>): DraftVocabulary {
+export function draftsFromMappingCsv(text: string): Record<string, CategoryDraft> {
+	const out: Record<string, CategoryDraft> = {};
+	for (const record of parseCsv(text)) {
+		const rowKey = record.row_key ?? '';
+		if (!rowKey) continue;
+
+		const done = (record.done ?? '').toLowerCase() === 'true';
+		const category = record.proposed_category ?? '';
+		const subcategory = record.proposed_subcategory ?? '';
+		const topic = record.proposed_topic ?? '';
+		const proposedDiscipline = record.proposed_discipline ?? '';
+		const currentDiscipline = record.current_discipline ?? '';
+		const discipline =
+			proposedDiscipline.trim() && proposedDiscipline !== currentDiscipline
+				? proposedDiscipline.trim()
+				: '';
+
+		const hasWork = done || category.trim() || subcategory.trim() || topic.trim() || discipline;
+		if (!hasWork) continue;
+
+		out[rowKey] = {
+			category: category.trim(),
+			subcategory: subcategory.trim(),
+			topic: topic.trim(),
+			discipline,
+			done
+		};
+	}
+	return out;
+}
+
+export function draftVocabulary(
+	drafts: Record<string, CategoryDraft>,
+	canonicalDisciplines: readonly string[] = []
+): DraftVocabulary {
 	const categories = new Set<string>();
 	const subcategories = new Set<string>();
 	const topics = new Set<string>();
+	const disciplines = new Set<string>(canonicalDisciplines);
 	for (const draft of Object.values(drafts)) {
 		if (draft.category.trim()) categories.add(draft.category.trim());
 		if (draft.subcategory.trim()) subcategories.add(draft.subcategory.trim());
 		if (draft.topic.trim()) topics.add(draft.topic.trim());
+		if (draft.discipline.trim()) disciplines.add(draft.discipline.trim());
 	}
 	const sort = (a: string, b: string) => a.localeCompare(b);
 	return {
 		categories: [...categories].sort(sort),
 		subcategories: [...subcategories].sort(sort),
-		topics: [...topics].sort(sort)
+		topics: [...topics].sort(sort),
+		disciplines: [...disciplines].sort(sort)
 	};
 }

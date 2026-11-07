@@ -6,10 +6,17 @@
 	const SUBCATEGORY_LIST = 'snd-mapping-subcategories';
 	const TOPIC_LIST = 'snd-mapping-topics';
 
-	let { rowKey, lines }: { rowKey: string; lines: SheetLine[] } = $props();
+	let {
+		rowKey,
+		lines,
+		currentDiscipline
+	}: { rowKey: string; lines: SheetLine[]; currentDiscipline: string } = $props();
+
+	const DISCIPLINE_LIST = 'snd-mapping-disciplines';
 
 	const store = $derived(categoryDrafts());
 	const draft = $derived({ ...draftFor(rowKey), ...store[rowKey] });
+	const disciplineValue = $derived(draft.discipline || currentDiscipline);
 
 	function splitColon() {
 		saveCategoryDraft(rowKey, suggestFromSheetLines(lines));
@@ -50,6 +57,18 @@
 				value={draft.topic}
 				placeholder="Often blank"
 				oninput={(event) => saveCategoryDraft(rowKey, { topic: event.currentTarget.value })}
+			/>
+		</dd>
+	</div>
+	<div>
+		<dt>Discipline</dt>
+		<dd>
+			<input
+				type="text"
+				list={DISCIPLINE_LIST}
+				value={disciplineValue}
+				oninput={(event) =>
+					saveCategoryDraft(rowKey, { discipline: event.currentTarget.value })}
 			/>
 		</dd>
 	</div>
