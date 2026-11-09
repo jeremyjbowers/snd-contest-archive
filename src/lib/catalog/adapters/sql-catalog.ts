@@ -5,6 +5,8 @@ import type { Sql } from '../persist/sql';
 
 const summaryLoads = new WeakMap<Sql, Promise<Entry[]>>();
 
+const MIN_YEAR = 2023; // hide years before this in public-facing version
+
 /** Catalog over the Postgres schema. SQLite keeps its own adapter. */
 export function createSqlCatalog(sql: Sql): Catalog {
 	return {
@@ -53,9 +55,13 @@ function loadSummaries(sql: Sql) {
 }
 
 async function readSummaries(sql: Sql) {
-	const rows = await sql.query('SELECT * FROM entries');
+	const rows = await sql.query('SELECT * FROM entries WHERE year >= $1', [MIN_YEAR]);
 	const counts = await sql.query<{ entry_id: string; n: number }>(
-		'SELECT entry_id, count(*)::int AS n FROM entry_images GROUP BY entry_id'
+		`SELECT i.entry_id, count(*)::int AS n
+		 FROM entry_images i JOIN entries e ON e.id = i.entry_id
+		 WHERE e.year >= $1
+		 GROUP BY i.entry_id`,
+		[MIN_YEAR]
 	);
 	const imageCount = new Map(counts.map((row) => [String(row.entry_id), Number(row.n)]));
 	return rows.map((row) => {
@@ -70,7 +76,11 @@ async function allEntries(sql: Sql, withCredits: boolean) {
 	if (!withCredits) return loadSummaries(sql);
 	const entries = await loadSummaries(sql);
 	const credits = await sql.query<{ entry_id: string; name: string; role: string }>(
-		'SELECT entry_id, name, role FROM credits ORDER BY sort_order'
+		`SELECT c.entry_id, c.name, c.role
+		 FROM credits c JOIN entries e ON e.id = c.entry_id
+		 WHERE e.year >= $1
+		 ORDER BY c.sort_order`,
+		[MIN_YEAR]
 	);
 	const creditsById = group(
 		credits,
