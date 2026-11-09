@@ -32,7 +32,6 @@
 	}
 
 	const entry = $derived(data.entry);
-	const images = $derived(entry.images.filter((url) => url.trim()));
 	const favorited = $derived(isFavorite(entry.id));
 	const creditLine = $derived(
 		entry.credits
@@ -65,7 +64,7 @@
 	<title>{entry.title} — the Archive</title>
 </svelte:head>
 
-<article class="page" class:imageless={images.length === 0}>
+<article class="page">
 	<aside class="side-panel">
 		<nav class="crumb slug-mid" aria-label="Breadcrumb">
 			<a href="{resolve('/')}{archiveHref().slice(1)}" style:--icon="{CARETS}px" onclick={back}>
@@ -142,32 +141,29 @@
 		</div>
 	</aside>
 
-	{#if images.length}
-		<section
-			class="gallery"
-			aria-label={entry.title}
-			onscroll={(event) =>
-				(slide = Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))}
-		>
-			{#each images as image, index (image + index)}
-				<div class="slide">
-					<img
-						class="fit"
-						src={image}
-						alt="{entry.title}, image {index + 1}"
-						{@attach fitImage}
-						onerror={(event) => {
-							if (event.currentTarget instanceof HTMLImageElement)
-								event.currentTarget.hidden = true;
-						}}
-					/>
-				</div>
-			{/each}
-		</section>
-	{/if}
-	{#if images.length > 1}
+	<section
+		class="gallery"
+		aria-label={entry.title}
+		onscroll={(event) =>
+			(slide = Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))}
+	>
+		{#each entry.images as image, index (image + index)}
+			<div class="slide">
+				<img
+					class="fit"
+					src={image}
+					alt="{entry.title}, image {index + 1}"
+					{@attach fitImage}
+					onerror={(event) => {
+						if (event.currentTarget instanceof HTMLImageElement) event.currentTarget.hidden = true;
+					}}
+				/>
+			</div>
+		{/each}
+	</section>
+	{#if entry.images.length > 1}
 		<div class="dots" aria-hidden="true">
-			{#each images as image, index (image + index)}
+			{#each entry.images as image, index (image + index)}
 				<span class:on={index === slide}></span>
 			{/each}
 		</div>
@@ -185,10 +181,6 @@
 		padding: var(--page-margin);
 		overflow: hidden;
 		contain: paint;
-	}
-
-	.page.imageless {
-		grid-template-columns: minmax(280px, 720px);
 	}
 
 	.also {

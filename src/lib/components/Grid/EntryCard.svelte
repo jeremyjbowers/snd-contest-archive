@@ -19,7 +19,6 @@
 
 	const favorited = $derived(isFavorite(entry.id));
 	const href = $derived(resolve('/entries/[id]', { id: entry.id }));
-	const hasImage = $derived(entry.thumbnail.length > 0);
 
 	function scrollMs(textWidth: number, boxWidth: number, gap: number) {
 		return (Math.max(0, textWidth - boxWidth + gap) / SCROLL_SPEED) * 1000;
@@ -29,10 +28,10 @@
 	const categoryScrollMs = $derived(scrollMs(categoryText, categoryBox, CATEGORY_GAP));
 </script>
 
-<article class="card" class:imageless={!hasImage}>
+<article class="card">
 	<a class="body" {href} target={isMobile.current ? undefined : '_blank'} rel="noopener noreferrer">
-		{#if hasImage}
-			<span class="media">
+		<span class="media">
+			{#if entry.thumbnail}
 				<img
 					src={entry.thumbnail}
 					alt={entry.title}
@@ -44,8 +43,8 @@
 						if (event.currentTarget instanceof HTMLImageElement) event.currentTarget.hidden = true;
 					}}
 				/>
-			</span>
-		{/if}
+			{/if}
+		</span>
 		<span class="card-info">
 			<p
 				class="publication title-serif clip"
@@ -173,19 +172,6 @@
 		pointer-events: none;
 	}
 
-	.card.imageless {
-		height: auto; /* don't stretch up to the picture cards in the same row */
-	}
-
-	.card.imageless .body {
-		padding-top: 40px; /* room for the heart once the picture well is gone */
-	}
-
-	.card.imageless .heart {
-		top: 10px;
-		right: 10px;
-	}
-
 	@media (prefers-reduced-motion: reduce) {
 		.clip span {
 			transition: none;
@@ -200,15 +186,6 @@
 			height: 40px;
 			display: grid;
 			place-items: center;
-		}
-
-		.card.imageless .body {
-			padding-top: 52px;
-		}
-
-		.card.imageless .heart {
-			top: 8px;
-			right: 8px;
 		}
 	}
 </style>
