@@ -130,6 +130,22 @@ test('platform detail stored as the subcategory selects that sheet row', () => {
 	assert.equal(next.subcategory, 'International');
 });
 
+test('extra spaces in a stored label still find the sheet row', () => {
+	const { assignments } = load();
+	const next = assignments.get(
+		classificationKey({
+			year: 2019,
+			category: 'Format:  Video',
+			subcategory: null,
+			discipline: 'Video',
+			platform: 'Digital'
+		})
+	);
+	assert.ok(next);
+	assert.equal(next.category, 'Format');
+	assert.equal(next.subcategory, 'Video');
+});
+
 test('an entry already on the proposal is not a change', () => {
 	const next = {
 		category: 'Inside Pages (News)',

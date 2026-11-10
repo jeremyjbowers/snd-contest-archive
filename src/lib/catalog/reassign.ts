@@ -44,7 +44,7 @@ export type ReassignmentPlan = {
 const SEP = '\u001f';
 
 export function blank(value: string | null | undefined): string {
-	return (value ?? '').trim();
+	return (value ?? '').trim().replace(/\s+/g, ' ');
 }
 
 /** The class an entry is in today: year plus the four stored labels. */
