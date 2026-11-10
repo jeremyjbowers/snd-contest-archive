@@ -157,6 +157,18 @@ export type DraftVocabulary = {
 	disciplines: string[];
 };
 
+/** Topic assigned to each sheet class. Missing and blank topics stay empty. */
+export function assignedTopicByRowKey(text: string): Map<string, string | null> {
+	const topics = new Map<string, string | null>();
+	for (const record of parseCsv(text)) {
+		const rowKey = record.row_key ?? '';
+		if (!rowKey) continue;
+		const topic = (record.proposed_topic ?? '').trim().replace(/\s+/g, ' ');
+		topics.set(rowKey, topic || null);
+	}
+	return topics;
+}
+
 export function draftsFromMappingCsv(text: string): Record<string, CategoryDraft> {
 	const out: Record<string, CategoryDraft> = {};
 	for (const record of parseCsv(text)) {

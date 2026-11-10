@@ -3,9 +3,11 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { parseCsv } from './parse-csv';
 import {
+	assignedTopics,
 	assignmentChanged,
 	buildReassignment,
 	classificationKey,
+	topicWasInvented,
 	type MappingSource
 } from './reassign';
 
@@ -144,6 +146,17 @@ test('extra spaces in a stored label still find the sheet row', () => {
 	assert.ok(next);
 	assert.equal(next.category, 'Format');
 	assert.equal(next.subcategory, 'Video');
+});
+
+test('a category copied into the topic is not an assigned topic', () => {
+	const { assignments } = load();
+	const allowed = assignedTopics(
+		[...assignments.values()].map((item) => ({ proposedTopic: item.topic ?? '' }))
+	);
+	assert.equal(topicWasInvented('International', allowed), true);
+	assert.equal(topicWasInvented('Sports', allowed), false);
+	assert.equal(topicWasInvented(null, allowed), false);
+	assert.equal(topicWasInvented('  ', allowed), false);
 });
 
 test('an entry already on the proposal is not a change', () => {

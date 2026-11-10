@@ -87,7 +87,8 @@ export function classifyCategory(input: {
 		subcategory: formatLabel,
 		discipline,
 		platform,
-		topic: isSectionName(subject) ? null : subject,
+		// A category label is not a topic. Topics come only from the mapping.
+		topic: null,
 		student: Boolean(section?.student) || /student|class work/i.test(blob),
 		nonEditorial: Boolean(section?.nonEditorial) || /non-editorial|advertorial/i.test(blob),
 		usedFallbackDiscipline: !fromCategory && !fromSection && !fromParent
