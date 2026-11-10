@@ -18,6 +18,13 @@ export type MappingSource = {
 	proposedSubcategory: string;
 	proposedTopic: string;
 	proposedDiscipline: string;
+	/**
+	 * Sheet labels the database stored in place of the classifier output.
+	 * Archive rows kept the general category. Some print rows kept the
+	 * platform detail in subcategory.
+	 */
+	generalCategory?: string;
+	platformDetail?: string;
 };
 
 export type StoredClass = {
@@ -85,33 +92,77 @@ export function buildReassignment(
 	rows: MappingSource[],
 	platformByRowKey: ReadonlyMap<string, string> = new Map()
 ): ReassignmentPlan {
+	const primary = collect(rows, platformByRowKey, 'primary');
+	const alias = collect(rows, platformByRowKey, 'alias');
+
+	const assignments = new Map<string, Assignment>();
+	const conflicts: ReassignmentPlan['conflicts'] = [];
+	for (const [key, group] of primary.groups) {
+		const proposals = [...group.proposals.values()];
+		if (proposals.length === 1) assignments.set(key, proposals[0]);
+		else conflicts.push({ key, entryCount: group.entryCount, proposals: proposals.length });
+	}
+	for (const [key, group] of alias.groups) {
+		const proposals = [...group.proposals.values()];
+		if (proposals.length !== 1) {
+			if (!assignments.has(key)) {
+				conflicts.push({ key, entryCount: group.entryCount, proposals: proposals.length });
+			}
+			continue;
+		}
+		const proposed = proposals[0];
+		const existing = assignments.get(key);
+		if (!existing) assignments.set(key, proposed);
+	}
+	conflicts.sort((a, b) => b.entryCount - a.entryCount);
+	return { assignments, conflicts };
+}
+
+function collect(
+	rows: MappingSource[],
+	platformByRowKey: ReadonlyMap<string, string>,
+	kind: 'primary' | 'alias'
+) {
 	const groups = new Map<string, { entryCount: number; proposals: Map<string, Assignment> }>();
 	for (const row of rows) {
 		const platform = platformByRowKey.get(row.rowKey) ?? row.currentPlatform;
 		const proposed = assignmentOf(row, platform.trim());
 		if (!proposed.category || !proposed.discipline) continue;
-		const key = classificationKey({
+		const stored = {
 			year: row.year,
-			category: row.currentCategory,
-			subcategory: row.currentSubcategory,
 			discipline: row.currentDiscipline,
 			platform: row.currentPlatform
+		};
+		const primaryKey = classificationKey({
+			...stored,
+			category: row.currentCategory,
+			subcategory: row.currentSubcategory
 		});
-		const group = groups.get(key) ?? { entryCount: 0, proposals: new Map() };
-		group.entryCount += row.entryCount;
-		group.proposals.set(JSON.stringify(proposed), proposed);
-		groups.set(key, group);
+		const keys = new Set<string>();
+		if (kind === 'primary') keys.add(primaryKey);
+		else {
+			const general = blank(row.generalCategory);
+			if (general) {
+				keys.add(
+					classificationKey({ ...stored, category: general, subcategory: row.currentSubcategory })
+				);
+			}
+			const detail = blank(row.platformDetail);
+			if (detail) {
+				keys.add(
+					classificationKey({ ...stored, category: row.currentCategory, subcategory: detail })
+				);
+			}
+			keys.delete(primaryKey);
+		}
+		for (const key of keys) {
+			const group = groups.get(key) ?? { entryCount: 0, proposals: new Map() };
+			group.entryCount += row.entryCount;
+			group.proposals.set(JSON.stringify(proposed), proposed);
+			groups.set(key, group);
+		}
 	}
-
-	const assignments = new Map<string, Assignment>();
-	const conflicts: ReassignmentPlan['conflicts'] = [];
-	for (const [key, group] of groups) {
-		const proposals = [...group.proposals.values()];
-		if (proposals.length === 1) assignments.set(key, proposals[0]);
-		else conflicts.push({ key, entryCount: group.entryCount, proposals: proposals.length });
-	}
-	conflicts.sort((a, b) => b.entryCount - a.entryCount);
-	return { assignments, conflicts };
+	return { groups };
 }
 
 export function assignmentChanged(entry: StoredClass, next: Assignment): boolean {

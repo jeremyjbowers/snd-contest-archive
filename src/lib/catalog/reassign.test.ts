@@ -22,7 +22,9 @@ function load() {
 			proposedCategory: row.proposed_category,
 			proposedSubcategory: row.proposed_subcategory,
 			proposedTopic: row.proposed_topic,
-			proposedDiscipline: row.proposed_discipline
+			proposedDiscipline: row.proposed_discipline,
+			generalCategory: row.general_category,
+			platformDetail: row.platform_detail
 		})
 	);
 	const platforms = new Map(
@@ -82,6 +84,50 @@ test('a class with two proposals is not assigned', () => {
 	});
 	assert.equal(assignments.has(key), false);
 	assert.ok(conflicts.some((conflict) => conflict.key === key && conflict.proposals > 1));
+});
+
+test('a general category stored in place of the category number is reassigned', () => {
+	const { assignments } = load();
+	const next = assignments.get(
+		classificationKey({
+			year: 2017,
+			category: 'Features: Single-subject project',
+			subcategory: null,
+			discipline: 'News design',
+			platform: 'Digital'
+		})
+	);
+	assert.ok(next);
+	assert.equal(next.category, 'Features');
+	assert.equal(next.subcategory, 'Single-subject project');
+});
+
+test('a shared general category with several proposals is not assigned', () => {
+	const { assignments } = load();
+	const key = classificationKey({
+		year: 2018,
+		category: 'Story Page Design – News Features or Planned Coverage',
+		subcategory: '',
+		discipline: 'News design',
+		platform: 'Digital'
+	});
+	assert.equal(assignments.has(key), false);
+});
+
+test('platform detail stored as the subcategory selects that sheet row', () => {
+	const { assignments } = load();
+	const next = assignments.get(
+		classificationKey({
+			year: 2024,
+			category: 'International',
+			subcategory: 'Inside page',
+			discipline: 'News design',
+			platform: 'Print'
+		})
+	);
+	assert.ok(next);
+	assert.equal(next.category, 'Page Design');
+	assert.equal(next.subcategory, 'International');
 });
 
 test('an entry already on the proposal is not a change', () => {

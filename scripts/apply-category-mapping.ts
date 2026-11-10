@@ -39,7 +39,9 @@ const mapping = parseCsv(readFileSync('data/category-mapping-assigned.csv', 'utf
 		proposedCategory: row.proposed_category,
 		proposedSubcategory: row.proposed_subcategory,
 		proposedTopic: row.proposed_topic,
-		proposedDiscipline: row.proposed_discipline
+		proposedDiscipline: row.proposed_discipline,
+		generalCategory: row.general_category,
+		platformDetail: row.platform_detail
 	})
 );
 const platforms = new Map(
