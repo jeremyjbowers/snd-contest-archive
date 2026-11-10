@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
 import { parseAwards } from '../catalog/ingest/awards';
 import { classifyCategory } from '../catalog/ingest/categories';
+import { assignedTopicByRowKey } from './categoryMapping';
 import raw from './observations.json';
 
 export type FieldGroup = 'design' | 'source';
@@ -193,7 +195,7 @@ const FIELD_DEFS: {
 		id: 'topic',
 		label: 'Topic',
 		group: 'design',
-		blurb: 'Currently the same words as category, unless the label is only a section name.',
+		blurb: 'Set only by the category mapping. Empty when that mapping assigns no topic.',
 		href: '/admin/topic'
 	},
 	{
@@ -363,15 +365,12 @@ function classify(row: RawClass): ClassRow {
 	}
 	if (classified.category === 'Uncategorized') attention.push('No category label survived');
 	if (classified.usedFallbackDiscipline) attention.push('Discipline fell back to News design');
-	if (!classified.topic) attention.push('Topic is empty');
-	const review = attention.some(
-		(reason) => !reason.startsWith('Discipline') && reason !== 'Topic is empty'
-	);
-	return {
+	const review = attention.some((reason) => !reason.startsWith('Discipline'));
+	const presented: ClassRow = {
 		...row,
 		outCategory: classified.category,
 		outSubcategory: classified.subcategory,
-		outTopic: classified.topic,
+		outTopic: null,
 		outDiscipline: classified.discipline,
 		outPlatform: classified.platform,
 		student: classified.student,
@@ -380,6 +379,19 @@ function classify(row: RawClass): ClassRow {
 		attention,
 		review
 	};
+	presented.outTopic = mappingTopics().get(presentClass(presented).key) ?? null;
+	return presented;
+}
+
+let cachedTopics: Map<string, string | null> | null = null;
+
+function mappingTopics(): Map<string, string | null> {
+	if (!cachedTopics) {
+		cachedTopics = assignedTopicByRowKey(
+			readFileSync('data/category-mapping-assigned.csv', 'utf8')
+		);
+	}
+	return cachedTopics;
 }
 
 function canonicalAwards(rows: RawScalar[]): ValueRow[] {

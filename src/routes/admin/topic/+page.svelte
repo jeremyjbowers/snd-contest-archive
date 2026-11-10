@@ -8,5 +8,5 @@
 	rows={data.rows}
 	groupBy="outTopic"
 	title="Topic"
-	lede="Topic is currently copied from the category subject. When the only label is a section name, the topic is left empty. The same rows that need a category decision show up here, grouped by the topic the archive would store."
+	lede="A topic is stored only when the category mapping assigns one. A category or subcategory on its own does not become a topic, so many classes are empty here."
 />

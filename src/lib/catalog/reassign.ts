@@ -165,6 +165,24 @@ function collect(
 	return { groups };
 }
 
+/** Topics the mapping actually assigned. Anything else was copied from a category. */
+export function assignedTopics(rows: Pick<MappingSource, 'proposedTopic'>[]): Set<string> {
+	const topics = new Set<string>();
+	for (const row of rows) {
+		const topic = blank(row.proposedTopic);
+		if (topic) topics.add(topic);
+	}
+	return topics;
+}
+
+export function topicWasInvented(
+	topic: string | null | undefined,
+	allowed: ReadonlySet<string>
+): boolean {
+	const text = blank(topic);
+	return text.length > 0 && !allowed.has(text);
+}
+
 export function assignmentChanged(entry: StoredClass, next: Assignment): boolean {
 	return !sameAssignment(
 		{

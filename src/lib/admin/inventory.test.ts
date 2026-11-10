@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { buildInventory, getInventory, type ClassRow } from './inventory.ts';
+import { assignedTopicByRowKey } from './categoryMapping.ts';
+import { buildInventory, getInventory, presentClass, type ClassRow } from './inventory.ts';
 
 const file = {
 	readOn: '2026-10-30',
@@ -38,7 +40,7 @@ test('a 2025 sports row keeps the subject and the format', () => {
 	assert.equal(row?.outSubcategory, 'Single page');
 	assert.equal(row?.outDiscipline, 'Infographics');
 	assert.equal(row?.outPlatform, 'Print');
-	assert.equal(row?.outTopic, 'Sports');
+	assert.equal(row?.outTopic, null);
 	assert.equal(row?.review, false);
 });
 
@@ -59,6 +61,21 @@ test('combined award strings stay visible as unrecognized', () => {
 		award.some((row) => row.value === '(not a recognized award)'),
 		true
 	);
+});
+
+test('topics follow the mapping and do not copy the category', () => {
+	const topics = assignedTopicByRowKey(readFileSync('data/category-mapping-assigned.csv', 'utf8'));
+	const inventory = getInventory();
+	let assigned = 0;
+	let empty = 0;
+	for (const row of inventory.classes) {
+		const expected = topics.get(presentClass(row).key) ?? null;
+		assert.equal(row.outTopic, expected);
+		if (expected) assigned += 1;
+		else empty += 1;
+	}
+	assert.ok(assigned > 0);
+	assert.ok(empty > assigned);
 });
 
 test('the sheet snapshot covers the recent results and the archive', () => {

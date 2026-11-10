@@ -2,9 +2,11 @@ import { readFileSync } from 'node:fs';
 import { parseCsv } from '../src/lib/catalog/parse-csv.ts';
 import { pgSql } from '../src/lib/catalog/persist/pg.ts';
 import {
+	assignedTopics,
 	assignmentChanged,
 	buildReassignment,
 	classificationKey,
+	topicWasInvented,
 	type Assignment,
 	type MappingSource,
 	type StoredClass
@@ -19,9 +21,16 @@ import {
  *
  *   npx tsx scripts/apply-category-mapping.ts           # counts only
  *   npx tsx scripts/apply-category-mapping.ts --apply   # write
+ *
+ * Topics that are not in the mapping were copied from a category label.
+ * Clear those without rewriting category, subcategory, discipline, or platform:
+ *
+ *   npx tsx scripts/apply-category-mapping.ts --clear-invented-topics
+ *   npx tsx scripts/apply-category-mapping.ts --clear-invented-topics --apply
  */
 
 const apply = process.argv.includes('--apply');
+const clearInventedTopics = process.argv.includes('--clear-invented-topics');
 const url = process.env.CATALOG_URL || process.env.DATABASE_URL;
 if (!url || !/^postgres(ql)?:\/\//.test(url)) {
 	throw new Error('Set CATALOG_URL or DATABASE_URL to a postgres:// connection string.');
@@ -54,6 +63,66 @@ const plan = buildReassignment(mapping, platforms);
 
 type Row = StoredClass & { id: string };
 const sql = pgSql(url);
+
+if (clearInventedTopics) {
+	const allowedTopics = assignedTopics(mapping);
+	const entries = await sql.query<{ id: string; topic: string | null }>(
+		`SELECT id, topic FROM entries`
+	);
+	const counts = new Map<string, number>();
+	const ids: string[] = [];
+	let keep = 0;
+	let alreadyEmpty = 0;
+	for (const entry of entries) {
+		if (!topicWasInvented(entry.topic, allowedTopics)) {
+			if (blankTopic(entry.topic)) alreadyEmpty += 1;
+			else keep += 1;
+			continue;
+		}
+		const label = (entry.topic ?? '').trim().replace(/\s+/g, ' ');
+		counts.set(label, (counts.get(label) ?? 0) + 1);
+		ids.push(entry.id);
+	}
+	const top = [...counts.entries()]
+		.sort((a, b) => b[1] - a[1])
+		.slice(0, 20)
+		.map(([topic, count]) => ({ topic, count }));
+	console.log(
+		JSON.stringify(
+			{
+				entries: entries.length,
+				allowedTopics: [...allowedTopics].sort(),
+				clear: ids.length,
+				keep,
+				alreadyEmpty,
+				apply,
+				top
+			},
+			null,
+			2
+		)
+	);
+	if (!apply) {
+		console.log('Dry run. Pass --apply to clear these topics.');
+		process.exit(0);
+	}
+	await sql.exec('BEGIN');
+	try {
+		for (const id of ids) {
+			await sql.query(`UPDATE entries SET topic = NULL WHERE id = $1`, [id]);
+		}
+		await sql.exec('COMMIT');
+	} catch (error) {
+		await sql.exec('ROLLBACK');
+		throw error;
+	}
+	console.log(`Cleared ${ids.length} topics.`);
+	process.exit(0);
+}
+
+function blankTopic(topic: string | null): boolean {
+	return !(topic ?? '').trim();
+}
 const entries = await sql.query<Row>(
 	`SELECT id, year, category, subcategory, discipline, platform, topic FROM entries`
 );
