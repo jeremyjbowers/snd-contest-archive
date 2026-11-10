@@ -88,8 +88,7 @@
 			<div>
 				<dt class="slug">Category</dt>
 				<dd>
-					{entry.category}{#if entry.subcategory}
-						> {entry.subcategory}{/if}
+					{entry.category}{#if entry.subcategory}&nbsp;> {entry.subcategory}{/if}
 				</dd>
 			</div>
 			{#if creditLine}
@@ -98,12 +97,12 @@
 					<dd>{creditLine}</dd>
 				</div>
 			{/if}
-			{#if entry.description}
+			<!-- {#if entry.description}
 				<div>
 					<dt class="slug">Description</dt>
 					<dd>{entry.description}</dd>
 				</div>
-			{/if}
+			{/if} -->
 			<div>
 				<dt class="slug">platform</dt>
 				<dd>{entry.platform}</dd>
@@ -111,7 +110,7 @@
 			{#if entry.url}
 				<div>
 					<dd>
-						<a class="slug out" href={entry.url} target="_blank" rel="noopener noreferrer">Link</a>
+						<a class="slug out" href={entry.url} target="_blank" rel="noopener noreferrer">See the full piece</a>
 					</dd>
 				</div>
 			{/if}

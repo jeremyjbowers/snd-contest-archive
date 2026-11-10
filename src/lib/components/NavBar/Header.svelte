@@ -145,7 +145,7 @@
 		new theme
 		<Icon name="shuffle" width={20} height={14} />
 	</button> -->
-	{#if dev}
+	<!-- {#if dev}
 		<button
 			class="theme"
 			type="button"
@@ -155,7 +155,7 @@
 		>
 			{isLocked() ? 'locked view on' : 'locked view'}
 		</button>
-	{/if}
+	{/if} -->
 </header>
 
 <style>
