@@ -62,6 +62,7 @@ let unchanged = 0;
 let conflict = 0;
 let unmatched = 0;
 const writes: { id: string; next: Assignment }[] = [];
+const unmatchedCounts = new Map<string, { count: number; entry: StoredClass }>();
 
 for (const entry of entries) {
 	const key = classificationKey(entry);
@@ -72,6 +73,9 @@ for (const entry of entries) {
 	const next = plan.assignments.get(key);
 	if (!next) {
 		unmatched += 1;
+		const tally = unmatchedCounts.get(key) ?? { count: 0, entry };
+		tally.count += 1;
+		unmatchedCounts.set(key, tally);
 		continue;
 	}
 	if (!assignmentChanged(entry, next)) {
@@ -95,6 +99,38 @@ const summary = {
 console.log(JSON.stringify(summary, null, 2));
 
 if (!apply) {
+	const top = [...unmatchedCounts.values()]
+		.sort((a, b) => b.count - a.count)
+		.slice(0, 20)
+		.map((item) => ({
+			count: item.count,
+			year: item.entry.year,
+			category: item.entry.category,
+			subcategory: item.entry.subcategory,
+			discipline: item.entry.discipline,
+			platform: item.entry.platform
+		}));
+	const known = [...plan.assignments.keys(), ...conflictKeys];
+	const drop = (key: string, index: number) => {
+		const parts = key.split('\u001f');
+		parts[index] = '';
+		return parts.join('\u001f');
+	};
+	const byPlatform = new Set(known.map((key) => drop(key, 4)));
+	const bySubcategory = new Set(known.map((key) => drop(key, 2)));
+	let platformOnly = 0;
+	let subcategoryOnly = 0;
+	for (const [key, item] of unmatchedCounts) {
+		if (byPlatform.has(drop(key, 4))) platformOnly += item.count;
+		if (bySubcategory.has(drop(key, 2))) subcategoryOnly += item.count;
+	}
+	console.log(
+		JSON.stringify(
+			{ unmatchedClasses: unmatchedCounts.size, platformOnly, subcategoryOnly, top },
+			null,
+			2
+		)
+	);
 	console.log('Dry run. Pass --apply to write these changes.');
 	process.exit(0);
 }
