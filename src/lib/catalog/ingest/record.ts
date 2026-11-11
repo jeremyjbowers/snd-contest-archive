@@ -71,7 +71,7 @@ export function toEntry(record: SubmissionRecord, assets: SourceAsset[] = []): E
 		discipline: record.discipline,
 		platform: record.platform,
 		topic: record.topic,
-		description: record.description ?? record.citation,
+		description: record.description,
 		citation: record.citation,
 		links: record.url ? [record.url] : [],
 		thumbnail: images[0] ?? '',
