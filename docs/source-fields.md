@@ -30,8 +30,8 @@ The page reads one `Entry`. Anything else needs a catalog change before it can a
 | Discipline              | One of six archive buckets: News design, Infographics, Art direction, Illustration & animation, Product design, Video | Derived from the category section, not a source column                                  |
 | Platform                | Print, Digital, Social, Multiplatform, or Other                                                                       | `Platform`, with `Platform - all` and print/digital table defaults                      |
 | Topic                   | Usually the same words as category                                                                                    | Derived                                                                                 |
-| Description             | Entrant text, or the citation when there is no entrant text                                                           | Award Force `Descrip`, else the citation                                                |
-| Citation                | Judges' prose                                                                                                         | `Medal Notes`, `Judges Comments`, `Citation`, Award Force `World's Best description`    |
+| Description             | Entrant text only. Never the judges' text                                                                             | Award Force `Descrip`                                                                   |
+| Citation                | Judges' prose                                                                                                         | `Medal Notes`, `Judges Comments`, `Citation`                                            |
 | URL                     | One public link                                                                                                       | The first URL-shaped column                                                             |
 | Images                  | Work previews, served from the archive                                                                                | `Attachment` or `Screenshots`                                                           |
 | Credits                 | Name and role pairs                                                                                                   | `Credits`, or a single `First Name` + `Last Name` on older digital rows                 |
@@ -172,9 +172,11 @@ Three shapes, all prose:
 | `Judges Comments` | Digital 2022 and 2023                           | Same idea, single-line text                                                                                                                                                        |
 | `Citation`        | Archive, and World's Best Winners and Finalists | Rich text. Often a markdown title that is also a link, then one or more paragraphs. 1 of 3,552 Archive rows has one. The World's Best table is where these citations actually live |
 
-A medal note reads like a paraphrase: what the judges loved, how the piece behaved, a short quote. A World's Best citation reads like a short essay and starts with a linked title, for example a heading pointing at `https://pudding.cool/` followed by a paragraph. Award Force calls the entrant's own text `Descrip` and the World's Best essay `World's Best description`.
+A medal note reads like a paraphrase: what the judges loved, how the piece behaved, a short quote. A World's Best citation reads like a short essay and starts with a linked title, for example a heading pointing at `https://pudding.cool/` followed by a paragraph.
 
-The page shows one block: entrant text if it exists, otherwise this citation. The two texts are different jobs. `Descrip` is the newsroom's description. Medal notes and citations are the jury.
+Award Force calls the entrant's own text `Descrip`. The column named `World's Best description` is a PDF upload, a filename, not that essay. The loader keeps the filename with the other file locators and does not copy it into the citation.
+
+The entry stores the description and the citation as two separate fields. The description is only `Descrip`. It is never filled from the citation. Medal notes and citations are the jury.
 
 ### Links
 
@@ -360,30 +362,30 @@ SND46 medal discussions repeat that content set and add `Champion?` and a hidden
 
 One row per submission. The loader reads these:
 
-| Column                                                             | Kind of data                               | Lands on the entry as                                               |
-| ------------------------------------------------------------------ | ------------------------------------------ | ------------------------------------------------------------------- |
-| Entry ID, or ID                                                    | Contest entry number                       | The archive id, prefixed                                            |
-| Entry                                                              | Title                                      | Title                                                               |
-| Season                                                             | Four-digit year                            | Year                                                                |
-| Contest                                                            | `SND46`, `SND47`                           | Kept on the submission only                                         |
-| Publication                                                        | Masthead                                   | Publication                                                         |
-| Company publication                                                | Organization                               | Publication, only when Publication is empty                         |
-| Parent category                                                    | Section                                    | Category, discipline, student, non-editorial                        |
-| Category                                                           | Subject or format, depending on year       | Category and subcategory                                            |
-| Platform                                                           | Print, Digital, and similar                | Platform                                                            |
-| Print options                                                      | A format phrase                            | Subcategory and platform, when the category is not already a format |
-| Tags                                                               | Comma-separated words: `Print, Cover, AOE` | Awards. Format words in this cell are ignored                       |
-| Descrip                                                            | Entrant's description                      | Description                                                         |
-| World's Best description                                           | Jury essay                                 | Citation                                                            |
-| Credits                                                            | `Name, Role; Name`                         | Credits                                                             |
-| Country                                                            | Country name                               | Submission only                                                     |
-| Org size                                                           | Organization size                          | Submission only                                                     |
-| Emerging designer                                                  | Checkbox                                   | Submission only                                                     |
-| Student or school publication                                      | Checkbox                                   | Student flag                                                        |
-| Entry status                                                       | `Submitted`, `In progress`, and similar    | Gate. Only submitted rows can publish                               |
-| Moderation status                                                  | `approved`, `undecided`, `rejected`        | Gate. Only approved rows can publish                                |
-| URL, URL 1, and any other column whose name contains "url"         | Public link                                | URL and link assets                                                 |
-| Columns whose names contain attachment, preview, or start with pdf | An Award Force file id, not a URL          | File locator                                                        |
+| Column                                                                                             | Kind of data                                  | Lands on the entry as                                               |
+| -------------------------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------- |
+| Entry ID, or ID                                                                                    | Contest entry number                          | The archive id, prefixed                                            |
+| Entry                                                                                              | Title                                         | Title                                                               |
+| Season                                                                                             | Four-digit year                               | Year                                                                |
+| Contest                                                                                            | `SND46`, `SND47`                              | Kept on the submission only                                         |
+| Publication                                                                                        | Masthead                                      | Publication                                                         |
+| Company publication                                                                                | Organization                                  | Publication, only when Publication is empty                         |
+| Parent category                                                                                    | Section                                       | Category, discipline, student, non-editorial                        |
+| Category                                                                                           | Subject or format, depending on year          | Category and subcategory                                            |
+| Platform                                                                                           | Print, Digital, and similar                   | Platform                                                            |
+| Print options                                                                                      | A format phrase                               | Subcategory and platform, when the category is not already a format |
+| Tags                                                                                               | Comma-separated words: `Print, Cover, AOE`    | Awards. Format words in this cell are ignored                       |
+| Descrip                                                                                            | Entrant's description                         | Description                                                         |
+| World's Best description                                                                           | PDF upload, a filename                        | File locator, not the citation                                      |
+| Credits                                                                                            | `Name, Role; Name`                            | Credits                                                             |
+| Country                                                                                            | Country name                                  | Submission only                                                     |
+| Org size                                                                                           | Organization size                             | Submission only                                                     |
+| Emerging designer                                                                                  | Checkbox                                      | Submission only                                                     |
+| Student or school publication                                                                      | Checkbox                                      | Student flag                                                        |
+| Entry status                                                                                       | `Submitted`, `In progress`, and similar       | Gate. Only submitted rows can publish                               |
+| Moderation status                                                                                  | `approved`, `undecided`, `rejected`           | Gate. Only approved rows can publish                                |
+| URL, URL 1, and any other column whose name contains "url"                                         | Public link                                   | URL and link assets                                                 |
+| Columns whose names contain attachment, preview, or start with pdf, and `World's Best description` | An Award Force file id or filename, not a URL | File locator                                                        |
 
 The workbook also carries entrant contact and paywall fields. The loader drops them and they are not archive fields: email, alternate email, mobile, phone, address, city and postal code, first name, last name, user id, entrant, pay mode, and any column whose name contains password, paywall, or instruction. Any other column in a future export is ignored until the loader is taught its name. A workbook dropped into the repo would extend this list with those headers.
 

@@ -12,7 +12,14 @@ import { fromAwardForceRows } from './award-force';
 import { parseAwards } from './awards';
 import { fromFilesCsv } from './files';
 import { modelFit } from './model-fit';
-import { combineRecords, toEntry, uniqueAssets } from './record';
+import {
+	combineRecords,
+	isUploadName,
+	mergeRecords,
+	toEntry,
+	uniqueAssets,
+	type SubmissionRecord
+} from './record';
 
 const SECRET_EMAIL = 'secret-entrant@example.com';
 const SECRET_PASSWORD = 'hunter2-do-not-store';
@@ -46,7 +53,8 @@ test('award force rows drop contact fields and paywall secrets', () => {
 				'First name': 'Secret',
 				'Last name': 'Person',
 				'URL 1': 'https://example.com/story',
-				'Print attachment': 'YCZ3EClwn6o2J58H'
+				'Print attachment': 'YCZ3EClwn6o2J58H',
+				"World's Best description": 'worlds-best.pdf'
 			}
 		],
 		'award-force:2024.xlsx'
@@ -60,12 +68,27 @@ test('award force rows drop contact fields and paywall secrets', () => {
 	assert.equal(record.platform, 'Print');
 	assert.equal(record.credits[0]?.role, 'Designer');
 	assert.equal(record.publication, 'The Daily');
+	assert.equal(record.description, 'A sports page.');
+	assert.equal(record.citation, null);
+	assert.equal(toEntry(record)?.description, 'A sports page.');
+	assert.equal(toEntry(record)?.citation, null);
 	const packed = JSON.stringify({ record, assets });
 	assert.equal(packed.includes(SECRET_EMAIL), false);
 	assert.equal(packed.includes(SECRET_PASSWORD), false);
 	assert.equal(packed.includes('Secret'), false);
 	assert.equal(
-		assets.some((asset) => asset.kind === 'award-force-file'),
+		assets.some(
+			(asset) => asset.kind === 'award-force-file' && asset.locator === 'YCZ3EClwn6o2J58H'
+		),
+		true
+	);
+	assert.equal(
+		assets.some(
+			(asset) =>
+				asset.kind === 'award-force-file' &&
+				asset.label === "World's Best description" &&
+				asset.locator === 'worlds-best.pdf'
+		),
 		true
 	);
 	assert.equal(
@@ -169,7 +192,8 @@ test('airtable results carry multiple awards and skip roster tables', () => {
 	assert.equal(record?.subcategory, 'Single page');
 	assert.equal(record?.discipline, 'News design');
 	assert.equal(record?.citation, 'A strong front.');
-	assert.equal(toEntry(record!)?.description, 'A strong front.');
+	assert.equal(toEntry(record!)?.description, null);
+	assert.equal(toEntry(record!)?.citation, 'A strong front.');
 	assert.equal(toEntry(record!)?.multiWinner, true);
 	assert.equal(toEntry(record!)?.award, "World's Best");
 
@@ -413,6 +437,34 @@ test('airtable awards replace award force tags for the same entry id', () => {
 	assert.equal(merged?.blockReason, null);
 });
 
+test('a filename citation is dropped and judges prose is kept', () => {
+	const filename = mergeRecords(
+		sampleRecord({ citation: 'worlds-best.pdf', description: null }),
+		sampleRecord({ citation: null, description: 'Entrant description' })
+	);
+	assert.equal(filename.citation, null);
+	assert.equal(filename.description, 'Entrant description');
+	assert.equal(toEntry(filename)?.description, 'Entrant description');
+	assert.equal(toEntry(filename)?.citation, null);
+
+	const prose = mergeRecords(
+		sampleRecord({ citation: 'A strong front.', description: null }),
+		sampleRecord({ citation: null, description: null })
+	);
+	assert.equal(prose.citation, 'A strong front.');
+	assert.equal(prose.description, null);
+	assert.equal(toEntry(prose)?.description, null);
+	assert.equal(toEntry(prose)?.citation, 'A strong front.');
+
+	const replaced = mergeRecords(
+		sampleRecord({ citation: 'YCZ3EClwn6o2J58H' }),
+		sampleRecord({ citation: 'Judges liked the type.', source: 'airtable' })
+	);
+	assert.equal(replaced.citation, 'Judges liked the type.');
+	assert.equal(isUploadName('worlds-best.pdf'), true);
+	assert.equal(isUploadName('A strong front.'), false);
+});
+
 test('model fit counts rows the entry model cannot publish', () => {
 	const { records } = fromAwardForceRows(
 		[
@@ -511,6 +563,41 @@ shot.png,https://sndcontests.awardsplatform.com/r/file/shot,800 KiB,image/png,,f
 	assert.equal(again.promoted, 1);
 	assert.equal((await catalog.listEntries()).length, 1);
 });
+
+function sampleRecord(overrides: Partial<SubmissionRecord> = {}): SubmissionRecord {
+	return {
+		sourceKey: 'af-1',
+		source: 'award-force',
+		origin: 'test',
+		sources: ['award-force'],
+		judgedBy: 'award-force',
+		year: 2025,
+		contest: null,
+		title: 'Title',
+		publication: 'Paper',
+		companyPublication: null,
+		awards: ['Gold'],
+		category: 'Sports',
+		subcategory: null,
+		discipline: 'News design',
+		platform: 'Print',
+		topic: null,
+		description: null,
+		citation: null,
+		url: null,
+		credits: [],
+		student: false,
+		nonEditorial: false,
+		country: null,
+		orgSize: null,
+		emergingDesigner: false,
+		entryStatus: 'Submitted',
+		moderationStatus: 'approved',
+		usedFallbackDiscipline: false,
+		blockReason: null,
+		...overrides
+	};
+}
 
 function pgliteSql(db: PGlite): Sql {
 	return {
