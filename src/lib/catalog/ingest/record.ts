@@ -71,7 +71,7 @@ export function toEntry(record: SubmissionRecord, assets: SourceAsset[] = []): E
 		discipline: record.discipline,
 		platform: record.platform,
 		topic: record.topic,
-		description: record.description ?? record.citation,
+		description: record.description,
 		citation: record.citation,
 		url: record.url,
 		thumbnail: images[0] ?? '',
@@ -203,7 +203,7 @@ export function mergeRecords(
 		platform: preferPlatform(existing.platform, incoming.platform),
 		topic: incoming.topic ?? existing.topic,
 		description: incoming.description || existing.description,
-		citation: incoming.citation || existing.citation,
+		citation: preferCitation(existing.citation, incoming.citation),
 		url: incoming.url || existing.url,
 		credits: incoming.credits.length ? incoming.credits : existing.credits,
 		student: existing.student || incoming.student,
@@ -215,6 +215,24 @@ export function mergeRecords(
 		moderationStatus: incoming.moderationStatus ?? existing.moderationStatus,
 		usedFallbackDiscipline: incoming.usedFallbackDiscipline && existing.usedFallbackDiscipline
 	});
+}
+
+/**
+ * Judges' prose wins. An upload filename is not a citation: Award Force stores
+ * the World's Best PDF under a column named "World's Best description".
+ */
+export function preferCitation(existing: string | null, incoming: string | null) {
+	if (incoming && !isUploadName(incoming)) return incoming;
+	if (existing && !isUploadName(existing)) return existing;
+	return null;
+}
+
+/** A file id or filename, with no spaces. Prose always has a space. */
+export function isUploadName(value: string | null): boolean {
+	if (!value || /\s/.test(value)) return false;
+	return /^(?:[A-Za-z0-9]{12,32}|[^/\s]+\.(?:pdf|png|jpe?g|gif|webp|docx?|xlsx?|zip|indd|ai|psd|tiff?))$/i.test(
+		value
+	);
 }
 
 function preferPublication(existing: SubmissionRecord, incoming: SubmissionRecord) {
