@@ -85,7 +85,7 @@ function fromAwardForceRow(
 		companyPublication: company || null,
 		awards: parseAwards(column(row, 'Tags')),
 		description: textOrNull(column(row, 'Descrip')),
-		citation: textOrNull(column(row, "World's Best description")),
+		citation: null, // "World's Best description" is a PDF upload; see fileLocators
 		url: links.find((link) => link.kind === 'url')?.locator ?? null,
 		credits: parseCreditLine(column(row, 'Credits')),
 		country: textOrNull(column(row, 'Country')),
@@ -129,7 +129,7 @@ function fileLocators(
 ): Omit<SourceAsset, 'sourceKey' | 'origin' | 'sortOrder'>[] {
 	const assets: Omit<SourceAsset, 'sourceKey' | 'origin' | 'sortOrder'>[] = [];
 	for (const [key, value] of Object.entries(row)) {
-		if (!/attachment|preview|^pdf/i.test(key) || isSecretColumn(key)) continue;
+		if (!/attachment|preview|^pdf|world.s best description/i.test(key) || isSecretColumn(key)) continue;
 		const locator = asText(value);
 		if (isBlank(locator) || /^https?:\/\//i.test(locator)) continue;
 		assets.push({

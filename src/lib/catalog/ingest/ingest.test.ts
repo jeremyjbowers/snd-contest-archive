@@ -169,7 +169,8 @@ test('airtable results carry multiple awards and skip roster tables', () => {
 	assert.equal(record?.subcategory, 'Single page');
 	assert.equal(record?.discipline, 'News design');
 	assert.equal(record?.citation, 'A strong front.');
-	assert.equal(toEntry(record!)?.description, 'A strong front.');
+	assert.equal(toEntry(record!)?.description, null);
+	assert.equal(toEntry(record!)?.citation, 'A strong front.');
 	assert.equal(toEntry(record!)?.multiWinner, true);
 	assert.equal(toEntry(record!)?.award, "World's Best");
 

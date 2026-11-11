@@ -30,7 +30,7 @@ The page reads one `Entry`. Anything else needs a catalog change before it can a
 | Discipline              | One of six archive buckets: News design, Infographics, Art direction, Illustration & animation, Product design, Video | Derived from the category section, not a source column                                  |
 | Platform                | Print, Digital, Social, Multiplatform, or Other                                                                       | `Platform`, with `Platform - all` and print/digital table defaults                      |
 | Topic                   | Usually the same words as category                                                                                    | Derived                                                                                 |
-| Description             | Entrant text, or the citation when there is no entrant text                                                           | Award Force `Descrip`, else the citation                                                |
+| Description             | Entrant text only. Never the judges' text                                                                              | Award Force `Descrip`                                                                    |
 | Citation                | Judges' prose                                                                                                         | `Medal Notes`, `Judges Comments`, `Citation`, Award Force `World's Best description`    |
 | URL                     | One public link                                                                                                       | The first URL-shaped column                                                             |
 | Images                  | Work previews, served from the archive                                                                                | `Attachment` or `Screenshots`                                                           |
@@ -174,7 +174,7 @@ Three shapes, all prose:
 
 A medal note reads like a paraphrase: what the judges loved, how the piece behaved, a short quote. A World's Best citation reads like a short essay and starts with a linked title, for example a heading pointing at `https://pudding.cool/` followed by a paragraph. Award Force calls the entrant's own text `Descrip` and the World's Best essay `World's Best description`.
 
-The page shows one block: entrant text if it exists, otherwise this citation. The two texts are different jobs. `Descrip` is the newsroom's description. Medal notes and citations are the jury.
+The page shows the description and the citation as two separate blocks. The two texts are different jobs. `Descrip` is the newsroom's description. Medal notes and citations are the jury.
 
 ### Links
 
