@@ -22,9 +22,11 @@ export function storedAwards(value: unknown, primary: string): string[] {
 export function entryFromRow(
 	row: Record<string, unknown>,
 	images: string[],
-	credits: Credit[]
+	credits: Credit[],
+	links: string[] = []
 ): Entry {
 	const award = String(row.award ?? '');
+	const url = row.url ? String(row.url) : ''; // the first link, when no others are passed
 	const thumbnail = String(row.thumbnail ?? '');
 	return {
 		id: String(row.id),
@@ -39,7 +41,7 @@ export function entryFromRow(
 		topic: row.topic ? String(row.topic) : null,
 		description: row.description ? String(row.description) : null,
 		citation: row.citation ? String(row.citation) : null,
-		url: row.url ? String(row.url) : null,
+		links: links.length ? links : url ? [url] : [],
 		thumbnail,
 		images: images.length ? images : thumbnail ? [thumbnail] : [],
 		credits,

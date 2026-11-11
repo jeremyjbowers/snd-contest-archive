@@ -177,7 +177,7 @@ async function upsertEntry(sql: Sql, entry: Entry, record: SubmissionRecord) {
 			entry.platform,
 			entry.topic,
 			entry.description,
-			entry.url,
+			entry.links[0] ?? null,
 			entry.thumbnail,
 			entry.student ? 1 : 0,
 			entry.nonEditorial ? 1 : 0,

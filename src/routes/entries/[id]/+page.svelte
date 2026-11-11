@@ -81,6 +81,7 @@
 		<!-- {#if entry.awards.length > 1}
 			<p class="also">{entry.awards.filter((item) => item !== entry.award).join(' · ')}</p>
 		{/if} -->
+		{console.log(entry)}
 		<h1>{entry.publication}</h1>
 		<p class="work-title">{entry.title}</p>
 
@@ -91,27 +92,38 @@
 					{entry.category}{#if entry.subcategory}&nbsp;> {entry.subcategory}{/if}
 				</dd>
 			</div>
+			<div>
+				<dt class="slug">platform</dt>
+				<dd>{entry.platform}</dd>
+			</div>
 			{#if creditLine}
 				<div>
 					<dt class="slug">Credits</dt>
 					<dd>{creditLine}</dd>
 				</div>
 			{/if}
-			<!-- {#if entry.description}
+			{#if entry.citation} 
+				<div>
+					<dt class="slug">Judge's comments</dt>
+					<dd>{entry.citation}</dd>
+				</div>
+			{/if}
+			{#if entry.description}
 				<div>
 					<dt class="slug">Description</dt>
 					<dd>{entry.description}</dd>
 				</div>
-			{/if} -->
-			<div>
-				<dt class="slug">platform</dt>
-				<dd>{entry.platform}</dd>
-			</div>
-			{#if entry.url}
-				<div>
-					<dd>
-						<a class="slug out" href={entry.url} target="_blank" rel="noopener noreferrer">See the full piece</a>
-					</dd>
+			{/if}
+			{#if entry.links.length > 0}
+				<div class="links">
+					<dt class="slug">Links</dt>
+					{#each entry.links as link, index (link)}
+						<dd>
+							<a class="slug out" href={link} target="_blank" rel="noopener noreferrer"
+								>Link{entry.links.length > 1 ? ` ${index + 1}` : ''}</a
+							>
+						</dd>&nbsp;&bull;&nbsp;
+					{/each}
 				</div>
 			{/if}
 		</dl>
@@ -218,6 +230,10 @@
 
 	.carets :global(svg + svg) {
 		margin-left: -10px; /* overlap the pair into one « mark */
+	}
+	.links dd {
+		width: max-content;
+		display: inline-block;
 	}
 
 	.out {

@@ -1,0 +1,69 @@
+diff --git a/docs/source-fields.md b/docs/source-fields.md
+index 169dd10..167b875 100644
+--- a/docs/source-fields.md
++++ b/docs/source-fields.md
+@@ -30,7 +30,7 @@ The page reads one `Entry`. Anything else needs a catalog change before it can a
+ | Discipline              | One of six archive buckets: News design, Infographics, Art direction, Illustration & animation, Product design, Video | Derived from the category section, not a source column                                  |
+ | Platform                | Print, Digital, Social, Multiplatform, or Other                                                                       | `Platform`, with `Platform - all` and print/digital table defaults                      |
+ | Topic                   | Usually the same words as category                                                                                    | Derived                                                                                 |
+-| Description             | Entrant text, or the citation when there is no entrant text                                                           | Award Force `Descrip`, else the citation                                                |
++| Description             | Entrant text only. Never the judges' text                                                                              | Award Force `Descrip`                                                                    |
+ | Citation                | Judges' prose                                                                                                         | `Medal Notes`, `Judges Comments`, `Citation`, Award Force `World's Best description`    |
+ | URL                     | One public link                                                                                                       | The first URL-shaped column                                                             |
+ | Images                  | Work previews, served from the archive                                                                                | `Attachment` or `Screenshots`                                                           |
+@@ -174,7 +174,7 @@ Three shapes, all prose:
+ 
+ A medal note reads like a paraphrase: what the judges loved, how the piece behaved, a short quote. A World's Best citation reads like a short essay and starts with a linked title, for example a heading pointing at `https://pudding.cool/` followed by a paragraph. Award Force calls the entrant's own text `Descrip` and the World's Best essay `World's Best description`.
+ 
+-The page shows one block: entrant text if it exists, otherwise this citation. The two texts are different jobs. `Descrip` is the newsroom's description. Medal notes and citations are the jury.
++The page shows the description and the citation as two separate blocks. The two texts are different jobs. `Descrip` is the newsroom's description. Medal notes and citations are the jury.
+ 
+ ### Links
+ 
+diff --git a/src/lib/catalog/ingest/award-force.ts b/src/lib/catalog/ingest/award-force.ts
+index f24bee4..a1eb1bb 100644
+--- a/src/lib/catalog/ingest/award-force.ts
++++ b/src/lib/catalog/ingest/award-force.ts
+@@ -85,7 +85,7 @@ function fromAwardForceRow(
+ 		companyPublication: company || null,
+ 		awards: parseAwards(column(row, 'Tags')),
+ 		description: textOrNull(column(row, 'Descrip')),
+-		citation: textOrNull(column(row, "World's Best description")),
++		citation: null, // "World's Best description" is a PDF upload; see fileLocators
+ 		url: links.find((link) => link.kind === 'url')?.locator ?? null,
+ 		credits: parseCreditLine(column(row, 'Credits')),
+ 		country: textOrNull(column(row, 'Country')),
+@@ -129,7 +129,7 @@ function fileLocators(
+ ): Omit<SourceAsset, 'sourceKey' | 'origin' | 'sortOrder'>[] {
+ 	const assets: Omit<SourceAsset, 'sourceKey' | 'origin' | 'sortOrder'>[] = [];
+ 	for (const [key, value] of Object.entries(row)) {
+-		if (!/attachment|preview|^pdf/i.test(key) || isSecretColumn(key)) continue;
++		if (!/attachment|preview|^pdf|world.s best description/i.test(key) || isSecretColumn(key)) continue;
+ 		const locator = asText(value);
+ 		if (isBlank(locator) || /^https?:\/\//i.test(locator)) continue;
+ 		assets.push({
+diff --git a/src/lib/catalog/ingest/ingest.test.ts b/src/lib/catalog/ingest/ingest.test.ts
+index a03ae12..f460a6b 100644
+--- a/src/lib/catalog/ingest/ingest.test.ts
++++ b/src/lib/catalog/ingest/ingest.test.ts
+@@ -169,7 +169,8 @@ test('airtable results carry multiple awards and skip roster tables', () => {
+ 	assert.equal(record?.subcategory, 'Single page');
+ 	assert.equal(record?.discipline, 'News design');
+ 	assert.equal(record?.citation, 'A strong front.');
+-	assert.equal(toEntry(record!)?.description, 'A strong front.');
++	assert.equal(toEntry(record!)?.description, null);
++	assert.equal(toEntry(record!)?.citation, 'A strong front.');
+ 	assert.equal(toEntry(record!)?.multiWinner, true);
+ 	assert.equal(toEntry(record!)?.award, "World's Best");
+ 
+--- a/src/lib/catalog/ingest/record.ts
++++ b/src/lib/catalog/ingest/record.ts
+@@ -71,7 +71,7 @@
+ 		discipline: record.discipline,
+ 		platform: record.platform,
+ 		topic: record.topic,
+-		description: record.description ?? record.citation,
++		description: record.description,
+ 		citation: record.citation,
+ 		links: record.url ? [record.url] : [],
+ 		thumbnail: images[0] ?? '',

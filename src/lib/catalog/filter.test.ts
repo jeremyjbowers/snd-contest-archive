@@ -16,7 +16,7 @@ function entry(patch: Partial<Entry> & Pick<Entry, 'id'>): Entry {
 		topic: null,
 		description: null,
 		citation: null,
-		url: null,
+		links: [],
 		thumbnail: '',
 		images: [],
 		credits: [],

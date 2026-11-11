@@ -32,7 +32,8 @@ export type Entry = {
 	 * when the entry has no entrant text.
 	 */
 	citation: string | null;
-	url: string | null;
+	/** Every public link on the source record, in order. */
+	links: string[];
 	thumbnail: string;
 	images: string[];
 	credits: Credit[];
@@ -51,7 +52,7 @@ export type Entry = {
 /** Card-sized view of an entry (no long description / image gallery). */
 export type EntrySummary = Omit<
 	Entry,
-	'images' | 'credits' | 'description' | 'citation' | 'url'
+	'images' | 'credits' | 'description' | 'citation' | 'links'
 > & {
 	imageCount: number;
 };

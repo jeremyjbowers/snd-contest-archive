@@ -26,10 +26,17 @@ export function createSqlCatalog(sql: Sql): Catalog {
 				'SELECT name, role FROM credits WHERE entry_id = $1 ORDER BY sort_order',
 				[id]
 			);
+			const links = await sql.query<{ locator: string }>(
+				`SELECT locator FROM source_assets
+				 WHERE source_key = $1 AND kind = 'url' AND locator NOT LIKE '/media/%'
+				 ORDER BY sort_order`,
+				[row.source_key]
+			);
 			return entryFromRow(
 				row,
 				images.map((image) => image.url),
-				credits.map((credit) => ({ name: credit.name, role: credit.role }))
+				credits.map((credit) => ({ name: credit.name, role: credit.role })),
+				[...new Set(links.map((link) => link.locator))]
 			);
 		},
 		async getFacets() {

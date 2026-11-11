@@ -38,7 +38,7 @@ function rowToEntry(row: Record<string, string>): Entry {
 		topic: row.topic || null,
 		description: row.description || null,
 		citation: row.citation || null,
-		url: row.url || null,
+		links: row.url ? [row.url] : [],
 		thumbnail: row.thumbnail || images[0] || '',
 		images,
 		credits: parseCredits(row.credits),
