@@ -66,8 +66,13 @@
 
 <article class="page">
 	<aside class="side-panel">
-		<nav class="crumb slug-mid" aria-label="Breadcrumb">
-			<a href="{resolve('/')}{archiveHref().slice(1)}" style:--icon="{CARETS}px" onclick={back}>
+		<nav class="crumb slug-bold" aria-label="Breadcrumb">
+			<a
+				class="back-link"
+				href="{resolve('/')}{archiveHref().slice(1)}"
+				style:--icon="{CARETS}px"
+				onclick={back}
+			>
 				<span class="icon carets">
 					<Caret size={CARET} />
 					<Caret size={CARET} />
@@ -122,7 +127,8 @@
 							<a class="slug out" href={link} target="_blank" rel="noopener noreferrer"
 								>Link{entry.links.length > 1 ? ` ${index + 1}` : ''}</a
 							>
-						</dd>&nbsp;&bull;&nbsp;
+						</dd>
+						{#if index < entry.links.length - 1}&nbsp;&bull;&nbsp;{/if}
 					{/each}
 				</div>
 			{/if}
@@ -183,6 +189,7 @@
 
 <style>
 	.page {
+		--panel-bottom: 64px; /* breathing room under the last item in each panel */
 		display: grid;
 		grid-template-columns: minmax(280px, 430px) minmax(0, 1fr);
 		grid-template-rows: minmax(0, 1fr);
@@ -194,36 +201,41 @@
 		contain: paint;
 	}
 
-	.also {
-		margin: 0;
-	}
-
 	.side-panel {
 		border-left: var(--border-width) solid var(--color-ink);
 		border-right: var(--border-width) solid var(--color-ink);
-		padding: 28px calc(var(--filter-inset) * 2) 0;
+		padding: 28px calc(var(--filter-inset) * 2) var(--panel-bottom);
 		min-height: 0;
 		overflow-y: auto;
 	}
-
-	.crumb {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		margin-bottom: 28px;
-		min-width: 0;
-	}
-
-	.crumb a {
+	.back-link {
+		--menu-ms: 300ms;
+		--menu-ease: cubic-bezier(0.33, 1, 0.68, 1); /* matches cubicOut on the panel */
+		--gap: 2px; /* between word and icon */
 		display: inline-flex;
 		align-items: center;
-		gap: 0px;
-		flex: none;
+		gap: 0;
+		padding: 0;
+		margin: 0 0 20px;
+		font-weight: 600;
+		line-height: 1;
+		color: var(--color-ink);
+		transition: gap var(--menu-ms) var(--menu-ease);
 	}
+
 	.icon {
 		display: flex;
 		justify-content: center;
+		width: 0;
+		overflow: hidden;
+		transition: width var(--menu-ms) var(--menu-ease);
 	}
+
+	.icon :global(svg) {
+		transform: scale(0);
+		transition: transform var(--menu-ms) var(--menu-ease);
+	}
+
 	.carets :global(svg) {
 		rotate: -90deg; /* caret asset points up */
 	}
@@ -231,6 +243,22 @@
 	.carets :global(svg + svg) {
 		margin-left: -10px; /* overlap the pair into one « mark */
 	}
+
+	.back-link:hover,
+	.back-link:focus-visible {
+		gap: var(--gap);
+	}
+
+	.back-link:hover .icon,
+	.back-link:focus-visible .icon {
+		width: var(--icon);
+	}
+
+	.back-link:hover :global(svg),
+	.back-link:focus-visible :global(svg) {
+		transform: scale(1);
+	}
+
 	.links dd {
 		width: max-content;
 		display: inline-block;
@@ -293,10 +321,11 @@
 
 	.gallery {
 		padding: var(--page-margin);
+		padding-bottom: var(--panel-bottom);
 		border-right: var(--border-width) solid var(--color-ink);
 		display: flex;
 		flex-direction: column;
-		justify-content: safe center;
+		/* justify-content: safe center; */
 		gap: 24px;
 		min-height: 0;
 		overflow-y: scroll;

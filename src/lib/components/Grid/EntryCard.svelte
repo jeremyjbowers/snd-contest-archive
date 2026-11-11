@@ -2,7 +2,6 @@
 	import type { EntrySummary } from '$lib/catalog/types';
 	import { isFavorite, toggleFavorite } from '$lib/favorites.svelte';
 	import { resolve } from '$app/paths';
-	import { isMobile } from '$lib/viewport';
 	import Heart from '../Icons/Heart.svelte';
 	import AwardFlag from './AwardFlag.svelte';
 
@@ -29,7 +28,7 @@
 </script>
 
 <article class="card">
-	<a class="body" {href} target={isMobile.current ? undefined : '_blank'} rel="noopener noreferrer">
+	<a class="body" {href}>
 		<span class="media">
 			{#if entry.thumbnail}
 				<img

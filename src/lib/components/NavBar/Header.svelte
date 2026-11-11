@@ -12,7 +12,7 @@
 	import Heart from '../Icons/Heart.svelte';
 
 	const MENU_MS = 300;
-	const MARK = 18;
+	const MARK = 18; // icon height; its width is 3/4 of this
 	const HEART = 16;
 	const CARET = 16; // each of the two back carets
 	const CARETS = 20; // width of the pair; they overlap a little
@@ -91,7 +91,7 @@
 				style:--mark="{MARK}px"
 			>
 				<span class="mark">
-					<Burger size={MARK} collapsed={menuOpen} />
+					<Burger size={MARK} collapsed={!menuOpen} />
 				</span>
 				MENU
 			</button>
@@ -118,14 +118,22 @@
 			{/if}
 		</div>
 
-		<a class="logo" href={resolve('/')} aria-label="SND home">
+		<!-- External site; resolve() only accepts app routes. -->
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+		<a
+			class="logo"
+			href="https://www.snd.org"
+			target="_blank"
+			rel="noopener noreferrer"
+			aria-label="SND website"
+		>
 			<img src="/assets/logo.png" alt="snd" width="86" height="31" />
 		</a>
 
 		<nav class="right">
 			{#if page.url.pathname === '/favorites'}
 				<a class="nav-link" href="{resolve('/')}{archiveHref().slice(1)}" style:--icon="{CARETS}px">
-					<span><span class="long">Back to the </span>archive</span>
+					<span class="long">Back to the archive</span>
 					<span class="icon carets">
 						<Caret size={CARET} />
 						<Caret size={CARET} />
@@ -199,9 +207,8 @@
 		position: relative;
 		display: inline-flex;
 		align-items: center;
-		gap: var(--gap);
+		gap: 0;
 		padding: var(--pad-y) var(--pad) var(--pad-y) 0;
-		margin-right: 0;
 		line-height: 1; /* equal space above caps and below baseline */
 		color: var(--color-ink);
 		background-color: transparent;
@@ -209,7 +216,6 @@
 		transition:
 			gap var(--menu-ms) var(--menu-ease),
 			padding-left var(--menu-ms) var(--menu-ease),
-			margin-right var(--menu-ms) var(--menu-ease),
 			background-color var(--menu-ms) var(--menu-ease),
 			color var(--menu-ms) var(--menu-ease);
 	}
@@ -228,24 +234,21 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		width: var(--mark);
+		width: 0;
 		height: 1lh; /* icon overflows a little so the chip stays one line tall, same as FAVORITES */
 		overflow: hidden;
 		transition: width var(--menu-ms) var(--menu-ease);
 	}
 
 	.menu-btn.open {
-		gap: 0;
-		padding-left: var(--pad); /* match the right padding once the icon is gone */
-		margin-right: calc(
-			var(--mark) + var(--gap) - var(--pad)
-		); /* keeps total width fixed so the logo and hover area don't move */
+		gap: var(--gap);
+		padding-left: var(--pad); /* match the right padding once the icon shows */
 		background-color: var(--color-ink);
 		color: var(--color-bg);
 	}
 
 	.menu-btn.open .mark {
-		width: 0; /* MENU slides into the space the icon leaves */
+		width: calc(var(--mark) * 0.75);
 	}
 
 	.nav-link {

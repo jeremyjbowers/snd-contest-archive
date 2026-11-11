@@ -12,7 +12,8 @@
 		query,
 		gridLabel,
 		empty,
-		footer
+		footer,
+		grid = $bindable()
 	}: {
 		title: string;
 		lede?: string;
@@ -22,15 +23,18 @@
 		gridLabel: string;
 		empty?: Snippet;
 		footer?: Snippet; // after the cards, e.g. load more
+		grid?: HTMLElement;
 	} = $props();
 
 	const queryKey = $derived(JSON.stringify(query));
 
-	// The grid remounts per filter. Phone layout scrolls the window instead.
-	function pinTop(node: HTMLElement) {
-		node.scrollTop = 0;
-		if (!/(auto|scroll)/.test(getComputedStyle(node).overflowY)) window.scrollTo(0, 0);
-	}
+	// Filters jump back to the top. Phone layout scrolls the window.
+	$effect.pre(() => {
+		queryKey;
+		if (!grid) return;
+		grid.scrollTop = 0;
+		if (!/(auto|scroll)/.test(getComputedStyle(grid).overflowY)) window.scrollTo(0, 0);
+	});
 </script>
 
 <main class="page">
@@ -47,15 +51,13 @@
 		<FilterPanel {facets} {query} />
 	</div>
 
-	{#key queryKey}
-		<section class="grid" aria-label={gridLabel} {@attach pinTop}>
-			<EntryGrid {entries} />
-			{#if !entries.length && empty}
-				<p class="empty">{@render empty()}</p>
-			{/if}
-			{@render footer?.()}
-		</section>
-	{/key}
+	<section class="grid" aria-label={gridLabel} bind:this={grid}>
+		<EntryGrid {entries} {queryKey} />
+		{#if !entries.length && empty}
+			<p class="empty">{@render empty()}</p>
+		{/if}
+		{@render footer?.()}
+	</section>
 </main>
 
 <style>
@@ -132,9 +134,13 @@
 	}
 
 	.empty {
-		grid-column: 1 / -1;
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-content: center;
+		padding: 0 24px;
+		text-align: center;
 		color: var(--color-muted);
-		max-width: 28em;
 	}
 
 	@media (max-width: 1100px) {
@@ -179,6 +185,11 @@
 			padding: 20px 0 48px;
 			border-right: 0;
 			overflow: visible;
+		}
+
+		.empty {
+			position: static;
+			padding: 48px 0;
 		}
 	}
 </style>

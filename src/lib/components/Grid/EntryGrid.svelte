@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { flip } from 'svelte/animate';
 	import { cubicIn, cubicOut } from 'svelte/easing';
 	import { prefersReducedMotion } from 'svelte/motion';
 	import type { EntrySummary } from '$lib/catalog/types';
@@ -12,11 +13,20 @@
 	const SPREAD = 180; // cap so a full screen of cards doesn't drag the filter
 	const JITTER = 20; // ms either way; smaller than half a column step, so neighbors keep their order
 
-	let { entries }: { entries: EntrySummary[] } = $props();
+	let { entries, queryKey }: { entries: EntrySummary[]; queryKey: string } = $props();
 
 	let intro = false; // skip the rise on first paint
+	let seenKey = '';
+	let rearrange = false; // same filter: cards only slide into their new cells
 	onMount(() => {
 		intro = true;
+	});
+
+	// Latch before the list moves. The slide itself starts in a later microtask.
+	$effect.pre(() => {
+		rearrange = seenKey !== '' && seenKey === queryKey;
+		void entries;
+		seenKey = queryKey;
 	});
 
 	type Box = Pick<DOMRect, 'top' | 'right' | 'bottom' | 'left'>;
@@ -107,6 +117,7 @@
 		const view = port(grid);
 		const fromHere = overlaps(from, view);
 		if (!fromHere && !overlaps(to, view)) return { duration: 0 };
+		if (rearrange) return flip(node, { from, to }, { duration: PHASE * 2 });
 		const old = `translate(${from.left - to.left}px, ${from.top - to.top}px)`;
 		return {
 			delay: wait(grid, fromHere ? from : to), // drop in the order of the cells you're looking at

@@ -25,7 +25,7 @@
 		{#if ids.length}
 			No favorites match those filters.
 		{:else}
-			No favorites yet. Use the heart on a card in the archive.
+			You don't have any favorites yet! Click the heart icon on a card to save it here.
 		{/if}
 	{/snippet}
 </ArchiveView>

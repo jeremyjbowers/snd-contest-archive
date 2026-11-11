@@ -3,6 +3,7 @@
 	import ArchiveView from '$lib/components/ArchiveView.svelte';
 	import { CARD_PAGE } from '$lib/catalog/page';
 	import type { EntrySummary } from '$lib/catalog/types';
+	import { tick } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import type { PageProps } from './$types';
 
@@ -18,6 +19,19 @@
 	const shown = $derived(extraKey === queryKey ? [...data.entries, ...extra] : data.entries);
 	const busy = $derived(loading && pendingKey === queryKey);
 	const error = $derived(failed && pendingKey === queryKey);
+
+	let grid = $state<HTMLElement | undefined>();
+
+	// Back from an entry restores the loaded cards and the scroll position
+	export const snapshot = {
+		capture: () => ({ extra, extraKey, top: grid?.scrollTop ?? 0 }),
+		restore: async (saved: { extra: EntrySummary[]; extraKey: string; top: number }) => {
+			extra = saved.extra;
+			extraKey = saved.extraKey;
+			await tick();
+			if (grid) grid.scrollTop = saved.top;
+		}
+	};
 
 	function watchMore(loaded: number) {
 		return (node: HTMLButtonElement) => {
@@ -85,6 +99,7 @@
 	facets={data.facets}
 	query={data.query}
 	gridLabel="Archive entries"
+	bind:grid
 >
 	{#snippet empty()}
 		No entries match those filters.
