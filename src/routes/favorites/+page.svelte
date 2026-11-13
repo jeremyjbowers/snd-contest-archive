@@ -25,7 +25,16 @@
 		{#if ids.length}
 			No favorites match those filters.
 		{:else}
-			You don't have any favorites yet! Click the heart icon on a card to save it here.
+			<p class='empty-message slug-bold'>You don't have any favorites yet!<br>Click the heart icon on a card to save it here.</p>
 		{/if}
 	{/snippet}
 </ArchiveView>
+
+
+<style>
+	.empty-message {
+		text-align: center;
+		font-size: 18px;
+		color: var(--color-ink);
+	}
+</style>

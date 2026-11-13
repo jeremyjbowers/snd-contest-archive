@@ -121,7 +121,7 @@
 			{/if}
 			{#if entry.links.length > 0}
 				<div class="links">
-					<dt class="slug">Links</dt>
+					<!-- <dt class="slug">Links</dt> -->
 					{#each entry.links as link, index (link)}
 						<dd>
 							<a class="slug out" href={link} target="_blank" rel="noopener noreferrer"
@@ -267,6 +267,7 @@
 	.out {
 		text-decoration: underline;
 		text-underline-offset: 0.2em;
+		font-weight: 400;
 	}
 
 	.year {

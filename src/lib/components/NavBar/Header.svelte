@@ -23,6 +23,7 @@
 	const menuDuration = $derived(prefersReducedMotion.current ? 0 : MENU_MS);
 
 	const internalLinks = [
+		{ href: '/', label: 'home' },
 		{ href: '/about', label: 'about the archive' }
 		// { href: '/membership', label: 'membership' },
 		// { href: '/competition', label: 'competition' },
