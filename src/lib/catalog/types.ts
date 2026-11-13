@@ -28,8 +28,7 @@ export type Entry = {
 	description: string | null;
 	/**
 	 * Judges' notes or a citation, when the source has one.
-	 * `description` is what the page shows: the entrant text, or this citation
-	 * when the entry has no entrant text.
+	 * `description` is only the entrant's own text. It is never filled from this.
 	 */
 	citation: string | null;
 	/** Every public link on the source record, in order. */
