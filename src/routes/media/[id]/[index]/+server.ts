@@ -7,7 +7,8 @@ import type { RequestHandler } from './$types';
 const ENTRY_ID = /^(?:af-\d+|at-rec[A-Za-z0-9]+)$/;
 
 /** Serve a stored attachment preview. The grid and the detail gallery point here. */
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
+	if (locals.gate && !locals.member) error(401, 'Sign in required');
 	const index = Number(params.index);
 	if (!ENTRY_ID.test(params.id) || !Number.isInteger(index) || index < 0) {
 		error(404, 'Not found');

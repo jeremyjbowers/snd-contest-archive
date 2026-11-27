@@ -3,7 +3,12 @@
 declare global {
 	namespace App {
 		// interface Error {}
-		// interface Locals {}
+		interface Locals {
+			/** True when this host requires an SND membership session. */
+			gate: boolean;
+			/** True when MembershipWorks accepted the SFSF cookie. */
+			member: boolean;
+		}
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}

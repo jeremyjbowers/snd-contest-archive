@@ -4,13 +4,14 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import Header from '$lib/components/NavBar/Header.svelte';
+	import MemberGate from '$lib/components/MemberGate.svelte';
 	import { initArchiveReturn, rememberArchive } from '$lib/archive-return.svelte';
 	import { initFavorites } from '$lib/favorites.svelte';
 	import { initLockedPreview, isLocked } from '$lib/locked.svelte';
 	import { initTheme } from '$lib/theme.svelte';
 	import '$lib/styles/app.css';
 
-	let { children } = $props();
+	let { children, data } = $props();
 	let keyboard = $state(false);
 
 	if (browser) {
@@ -36,10 +37,14 @@
 
 <svelte:head>
 	<link class="logo" rel="icon" href="/assets/logo.png" />
-	<title>SND Archive</title>
+	<title>{data.gate && !data.member ? 'Sign in — the Archive' : 'SND Archive'}</title>
 </svelte:head>
 
 <div class:keyboard class:locked={isLocked()}>
 	<Header />
-	{@render children()}
+	{#if data.gate && !data.member}
+		<MemberGate />
+	{:else}
+		{@render children()}
+	{/if}
 </div>
