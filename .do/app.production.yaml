@@ -1,7 +1,9 @@
 # SND Archive production, on the DigitalOcean Archives team.
 # Deploys the prod branch. Do not point this app at main.
-# Create or update it from this spec on that team; scripts/provision-digitalocean.ts
-# is the staging provisioner and refuses the Archives token.
+# The Archives team must authorize the DigitalOcean GitHub app for
+# jeremyjbowers/snd-contest-archive before this spec can be applied.
+# scripts/provision-digitalocean.ts is the staging provisioner and refuses
+# the Archives token.
 #
 # Cost matches staging: one shared 512 MiB service ($5/month) plus a 1 GiB
 # single-node Postgres cluster named snd-archive-pg (about $15/month).
