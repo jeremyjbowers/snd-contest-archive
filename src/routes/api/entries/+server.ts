@@ -14,7 +14,8 @@ function requestedBucket(params: URLSearchParams) {
 }
 
 /** The next screen of cards. The archive page calls this as the grid scrolls. */
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, locals }) => {
+	if (locals.gate && !locals.member) return json({ error: 'Sign in required' }, { status: 401 });
 	const catalog = getCatalog();
 	const query = queryFromSearchParams(url.searchParams);
 	const offset = Number(url.searchParams.get('offset'));
