@@ -1,0 +1,79 @@
+# SND Archive production, on the DigitalOcean Archives team.
+# Deploys the prod branch. Do not point this app at main.
+# The Archives team must authorize the DigitalOcean GitHub app for
+# jeremyjbowers/snd-contest-archive before this spec can be applied.
+# scripts/provision-digitalocean.ts is the staging provisioner and refuses
+# the Archives token.
+#
+# Cost matches staging: one shared 512 MiB service ($5/month) plus a 1 GiB
+# single-node Postgres cluster named snd-archive-pg (about $15/month).
+# The cluster is an existing production database loaded with a copy of the
+# staging catalog, so the app must use defaultdb / doadmin.
+name: snd-archive
+region: nyc
+alerts:
+  - rule: DEPLOYMENT_FAILED
+
+envs:
+  - key: NODE_ENV
+    scope: RUN_TIME
+    value: production
+  - key: NPM_CONFIG_PRODUCTION
+    scope: BUILD_TIME
+    value: 'false'
+  - key: CATALOG_URL
+    scope: RUN_TIME
+    value: '${snd-db.DATABASE_URL}'
+
+services:
+  - name: web
+    github:
+      repo: jeremyjbowers/snd-contest-archive
+      branch: prod
+      deploy_on_push: true
+    environment_slug: node-js
+    build_command: npm install --include=dev && npm run build
+    run_command: node build/index.js
+    http_port: 3000
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    instance_count: 1
+    envs:
+      - key: HOST
+        scope: RUN_TIME
+        value: 0.0.0.0
+    health_check:
+      http_path: /health
+      initial_delay_seconds: 10
+      period_seconds: 10
+      timeout_seconds: 5
+      failure_threshold: 5
+
+jobs:
+  - name: migrate
+    kind: PRE_DEPLOY
+    github:
+      repo: jeremyjbowers/snd-contest-archive
+      branch: prod
+      deploy_on_push: true
+    environment_slug: node-js
+    build_command: npm install --include=dev
+    run_command: npx tsx scripts/migrate.ts
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    instance_count: 1
+
+databases:
+  - name: snd-db
+    engine: PG
+    version: '16'
+    production: true
+    cluster_name: snd-archive-pg
+    db_name: defaultdb
+    db_user: doadmin
+
+ingress:
+  rules:
+    - component:
+        name: web
+      match:
+        path:
+          prefix: /

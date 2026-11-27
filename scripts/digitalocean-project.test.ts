@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { findArchiveProject, pickProject } from './digitalocean-project.ts';
+import { findArchiveProject, isArchivesTeam, pickProject } from './digitalocean-project.ts';
 
 const overSlot = { id: 'slot', name: 'Over slot' };
 const archive = { id: 'snd', name: 'SND design archive' };
@@ -27,6 +27,13 @@ test('does not use the baseball, ULMG, or NPL projects', () => {
 
 test('refuses when the only projects are Over slot', () => {
 	assert.throws(() => pickProject([overSlot, { id: 'os', name: 'overslot' }]), /Over Slot/);
+});
+
+test('recognizes the Archives production team', () => {
+	assert.equal(isArchivesTeam('Archives'), true);
+	assert.equal(isArchivesTeam(' archives '), true);
+	assert.equal(isArchivesTeam('BASEBALL'), false);
+	assert.equal(isArchivesTeam('Over-Slot'), false);
 });
 
 test('findArchiveProject returns undefined so the caller can create one', () => {

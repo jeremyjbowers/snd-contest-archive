@@ -2,6 +2,8 @@
 
 This guide is for a frontend engineer who wants the **live archive data** while developing locally. You do not need to write SQL day to day — the app already talks to Postgres through a small catalog layer. Your job is to point that layer at the production database and run the SvelteKit app.
 
+Production is the Postgres cluster on the DigitalOcean **Archives** team. Staging is the older cluster behind [snd-archive](https://snd-archive-y3yig.ondigitalocean.app), and it deploys from `main`. Ask for the production connection string when you want production rows. The steps below are the same for either database; the string decides which one you reach.
+
 You will get:
 
 1. A **connection string** (keep it private; treat it like a password)
