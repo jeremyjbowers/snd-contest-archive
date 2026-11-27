@@ -1,15 +1,15 @@
 # SND Archive production, on the DigitalOcean Archives team.
-# Deploys the prod branch. Do not point this app at main.
-# The Archives team must authorize the DigitalOcean GitHub app for
-# jeremyjbowers/snd-contest-archive before this spec can be applied.
-# scripts/provision-digitalocean.ts is the staging provisioner and refuses
-# the Archives token.
+# App name snd-archives-webapp-production. Deploys the prod branch.
+# Do not point this app at main.
 #
-# Cost matches staging: one shared 512 MiB service ($5/month) plus a 1 GiB
-# single-node Postgres cluster named snd-archive-pg (about $15/month).
-# The cluster is an existing production database loaded with a copy of the
-# staging catalog, so the app must use defaultdb / doadmin.
-name: snd-archive
+# Web service is 1 GiB ($12/month), one step above staging's 512 MiB, because
+# the Node process builds the SvelteKit app and serves preview images out of
+# Postgres. The migrate job stays at 512 MiB and is billed only while it runs.
+# Postgres is the existing Premium AMD cluster snd-archive-pg, resized to
+# 2 GiB / 1 vCPU (about $37/month) so the buffer cache can hold more of the
+# ~6 GiB media catalog. One node, no standby.
+# The app must use defaultdb / doadmin, where that copy was loaded.
+name: snd-archives-webapp-production
 region: nyc
 alerts:
   - rule: DEPLOYMENT_FAILED
@@ -35,7 +35,7 @@ services:
     build_command: npm install --include=dev && npm run build
     run_command: node build/index.js
     http_port: 3000
-    instance_size_slug: apps-s-1vcpu-0.5gb
+    instance_size_slug: apps-s-1vcpu-1gb
     instance_count: 1
     envs:
       - key: HOST
