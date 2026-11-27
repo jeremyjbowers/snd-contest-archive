@@ -12,6 +12,7 @@ import { readXlsxRows } from './read-xlsx.ts';
 import {
 	ARCHIVE_PROJECT_NAME,
 	findArchiveProject,
+	isArchivesTeam,
 	isOverSlotName,
 	type DigitalOceanProject
 } from './digitalocean-project.ts';
@@ -29,6 +30,7 @@ if (!token) {
 	process.exit(1);
 }
 
+await assertNotArchivesTeam();
 const projects = asProjects(json(doctl(['projects', 'list', '-o', 'json'])));
 assertNotOverslotTeam(projects);
 const project = findArchiveProject(projects) ?? createArchiveProject();
@@ -85,6 +87,21 @@ function doctl(args: string[]): string {
 
 function json(text: string): unknown {
 	return JSON.parse(text) as unknown;
+}
+
+async function assertNotArchivesTeam() {
+	const response = await fetch('https://api.digitalocean.com/v2/account', {
+		headers: { Authorization: `Bearer ${token}` }
+	});
+	if (response.status === 403) return;
+	if (!response.ok) return;
+	const body = (await response.json()) as { account?: { team?: { name?: string } } };
+	const team = body.account?.team?.name ?? '';
+	if (isArchivesTeam(team)) {
+		throw new Error(
+			'This token is the Archives production team. Refusing to provision from .do/app.yaml, which deploys main. Production deploys the prod branch from .do/app.production.yaml.'
+		);
+	}
 }
 
 function assertNotOverslotTeam(projects: DigitalOceanProject[]) {

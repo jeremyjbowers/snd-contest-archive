@@ -11,6 +11,11 @@ export function isOverSlotName(name: string): boolean {
 	return OVER_SLOT.test(name);
 }
 
+/** The Archives team hosts production. Staging provision must not run there. */
+export function isArchivesTeam(name: string): boolean {
+	return name.trim().toLowerCase() === 'archives';
+}
+
 /** The SND design archive project on this team, or undefined when it still has to be created. */
 export function findArchiveProject(
 	projects: DigitalOceanProject[]

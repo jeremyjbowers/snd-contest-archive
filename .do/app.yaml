@@ -1,6 +1,10 @@
-# SND Archive. Provision with scripts/provision-digitalocean.ts so the app
-# is assigned to the DigitalOcean project "SND design archive", on this
-# account rather than the Over Slot team.
+# SND Archive staging. Provision with scripts/provision-digitalocean.ts so
+# the app is assigned to the DigitalOcean project "SND design archive", on
+# the existing account rather than the Over Slot team or the Archives
+# production team.
+#
+# This spec deploys the main branch. Production is .do/app.production.yaml
+# and deploys the prod branch on the Archives team.
 #
 # Cost: one shared 512 MiB service ($5/month) plus a 1 GiB single-node
 # Postgres cluster (about $15/month). The pre-deploy job runs only during
@@ -16,10 +20,10 @@ envs:
     value: production
   - key: NPM_CONFIG_PRODUCTION
     scope: BUILD_TIME
-    value: "false"
+    value: 'false'
   - key: CATALOG_URL
     scope: RUN_TIME
-    value: "${snd-db.DATABASE_URL}"
+    value: '${snd-db.DATABASE_URL}'
 
 services:
   - name: web
@@ -60,7 +64,7 @@ jobs:
 databases:
   - name: snd-db
     engine: PG
-    version: "16"
+    version: '16'
     production: true
     cluster_name: snd-archive-pg
 

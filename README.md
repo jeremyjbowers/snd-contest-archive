@@ -55,15 +55,20 @@ To point a local checkout at the **production** database for read-only frontend 
 
 ## DigitalOcean
 
-`.do/app.yaml` is the App Platform spec: a 512 MiB web service and a pre-deploy job that runs `catalog:migrate`. The database is an existing managed Postgres cluster named `snd-archive-pg` (1 GiB, one node, about $15 a month). The web service is about $5 a month. There is no standby node.
+There are two App Platform apps, one per DigitalOcean team. Each is a 512 MiB web service (about $5 a month) and a 1 GiB single-node Postgres cluster named `snd-archive-pg` (about $15 a month). A pre-deploy job runs `catalog:migrate`. There is no standby node.
+
+| Environment | Team                                              | Git branch | Spec                      | App                                                         |
+| ----------- | ------------------------------------------------- | ---------- | ------------------------- | ----------------------------------------------------------- |
+| Staging     | existing account, project **SND design archive**  | `main`     | `.do/app.yaml`            | [snd-archive](https://snd-archive-y3yig.ondigitalocean.app) |
+| Production  | **Archives** team, project **SND design archive** | `prod`     | `.do/app.production.yaml` | same app name, its own URL                                  |
+
+Pushes to `main` deploy staging. Pushes to `prod` deploy production. Production does not deploy from `main`. To release, update `prod` from the staging commit you want (for example `git push origin main:prod` when staging is the release).
 
 ```sh
 DIGITALOCEAN_ACCESS_TOKEN=... npx tsx scripts/provision-digitalocean.ts
 ```
 
-The script creates the cluster and the app in a DigitalOcean project named **SND design archive**, creating that project on this account when it does not already exist. It will not put them on the Over Slot team. Award Force workbooks stay out of git and off the app image. The script can load them by adding the machine's address to the database firewall and removing that rule afterward. That path misses when the machine's public address changes during the load. The 2024 and 2025 workbooks were loaded instead by a one-off post-deploy job inside App Platform, using a private registry image that was deleted after the load. The checked-in spec does not include that job. The live app uses the GitHub source for `main` and deploys on push. The `prod` branch is cut from the deployed commit and can replace `main` as the App Platform branch when releases should be explicit.
-
-The running app is [snd-archive](https://snd-archive-y3yig.ondigitalocean.app).
+That script provisions **staging**. It creates the cluster and the app in a DigitalOcean project named **SND design archive**, creating that project on this account when it does not already exist. It will not put them on the Over Slot team, and it refuses the Archives team token so production is not pointed back at `main`. Award Force workbooks stay out of git and off the app image. The script can load them by adding the machine's address to the database firewall and removing that rule afterward. That path misses when the machine's public address changes during the load. The 2024 and 2025 workbooks were loaded instead by a one-off post-deploy job inside App Platform, using a private registry image that was deleted after the load. The checked-in spec does not include that job. Production was loaded with a copy of the staging database, in `defaultdb`, and the production spec binds that database as `doadmin`.
 
 `npm run catalog:fit` reads Award Force workbooks, the expiring file-download CSV, and Airtable JSON dumps and reports how those rows sit on the catalog model. It does not write a database. Entrant emails, phone numbers, addresses, and paywall passwords are dropped before anything is stored. Download URLs from Award Force expire after about 48 hours, so they are stored as locators rather than as permanent thumbnails. The pictures on the site come from the Airtable results sheets: each work attachment's preview is saved in Postgres and served at `/media/{id}/{index}`. Social cards and award certificates are not used as the entry image.
 
